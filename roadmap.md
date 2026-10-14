@@ -1,0 +1,16 @@
+- [x] Revoir le thème et la présentation de l’espace développeur.
+- [x] Corriger et vérifier l’ouverture des dossiers enfant pour crèche et RSAI.
+- [x] Compléter les dépôts et alertes documentaires.
+- [x] Ajouter les avis réciproques et la gestion des affectations/demandes RSAI.
+- [x] Ajouter les notes et échanges de documents médecin/crèche/parents.
+- [x] Documenter les API absentes et vérifier les parcours en démo.- [x] Développeur = compte suprême (créer, suspendre, modifier, réinitialiser MDP, supprimer).
+- [x] Clés API & messages système dans l'espace Développeur.
+- [x] Tableau paginé de supervision des affectations RSAI.
+- [x] Export PDF du dossier enfant.
+- [x] Alerte admin/dev à chaque accès refusé par sécurité.
+- [x] Application mobile installable (PWA) fidèle aux maquettes : connexion, onglets, SOS, profil, thèmes, QR code ordinateur, fenêtre d'installation, notifications temps réel.
+- [x] Connexion sans SMS payant : application d’authentification, Face ID/passkeys, appareil de confiance 30 jours, code par e-mail.
+- [x] Dossier enfant mobile allégé (textes, marges, onglets).
+
+- [x] Raccorder absences, températures, émargement, signatures, sorties, registres, mémos, avis RSAI, RDV médecin
+- [x] Configurer le domaine kidsmedia.vercel.app (serveur final)
