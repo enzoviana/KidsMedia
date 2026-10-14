@@ -8,7 +8,6 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png.asset.json";
 import { getSession, logout, roleToKey, SECURITY_EVENT, type RoleKey, type Session, type SecurityBlock } from "@/lib/api";
 import { SecurityBlockedScreen } from "./security-blocked";
 import { missingSpecs } from "@/lib/specs";
@@ -32,7 +31,7 @@ function NavSidebar({ role, session }: { role: RoleKey; session: Session }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b px-3 py-4">
         <Link to={roleHome[role]} className="flex items-center gap-2">
-          <img src={logo.url} alt="Kids'Med IA" className="h-9 w-9 shrink-0 rounded-lg bg-card object-cover object-top" />
+          <img src="/logo.png" alt="Kids'Med IA" className="h-9 w-9 shrink-0 rounded-lg bg-card object-cover object-top" />
           {!collapsed && <span className="font-display text-lg font-bold"><span className="text-brand-blue">Kids'</span><span className="text-brand-green">Med</span><span className="text-brand-pink">IA</span></span>}
         </Link>
       </SidebarHeader>

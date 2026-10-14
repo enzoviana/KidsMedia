@@ -3,7 +3,6 @@ import { qrDataUrl } from "@/lib/qr";
 import { Download, Share, SquarePlus, Smartphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import logo from "@/assets/logo.png.asset.json";
 
 type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 let deferred: BIPEvent | null = null;
@@ -64,7 +63,7 @@ export function MobileInstallPrompt() {
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
         <button onClick={close} aria-label="Fermer" className="absolute right-5 top-5 text-muted-foreground"><X className="h-5 w-5" /></button>
         <div className="flex items-center gap-4">
-          <img src={logo.url} alt="" className="h-16 w-16 rounded-2xl border bg-card object-contain p-1 shadow" />
+          <img src="/logo.png" alt="" className="h-16 w-16 rounded-2xl border bg-card object-contain p-1 shadow" />
           <div>
             <p className="font-display text-xl font-bold">Installer Kids'Med IA</p>
             <p className="text-sm text-muted-foreground">Accès en 1 geste, alertes en temps réel.</p>

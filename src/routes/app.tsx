@@ -6,7 +6,6 @@ import {
   Activity, ArrowRight, Baby, Bell, Building2, ChevronRight, ClipboardList, Eye, EyeOff, FileText, HeartPulse, HelpCircle, Home, Info, KeyRound, Lock,
   LogOut, Mail, Monitor, Moon, Phone, Pill, ShieldCheck, Sparkles, Star, Stethoscope, Sun, UserCircle, UserPlus, AlertTriangle, Users, Camera,
 } from "lucide-react";
-import logo from "@/assets/logo.png.asset.json";
 import { getSession, loginStart, logout, mfaSend, roleToKey, setSession, type PendingLogin, type Session } from "@/lib/api";
 import { MfaSwitcher, mfaHint, mfaNeedsSend, useMfa } from "@/components/auth/mfa";
 import { SecuritySettings } from "@/components/auth/security-settings";
@@ -100,7 +99,7 @@ function Public({ onDone }: { onDone: (s: Session) => void }) {
 function Brand() {
   return (
     <>
-      <div className="mx-auto grid h-28 w-28 place-items-center rounded-[1.25rem] bg-card shadow-[0_20px_50px_-15px] shadow-mobile-blue/40"><img src={logo.url} alt="Kids'Med IA" className="h-20 w-20 object-contain" /></div>
+      <div className="mx-auto grid h-28 w-28 place-items-center rounded-[1.25rem] bg-card shadow-[0_20px_50px_-15px] shadow-mobile-blue/40"><img src="/logo.png" alt="Kids'Med IA" className="h-20 w-20 object-contain" /></div>
       <p className="mt-5 text-center text-muted-foreground">Bienvenue sur</p>
       <h1 className="text-center font-display text-3xl font-bold tracking-tight"><span className="text-mobile-blue">Kids'Med</span> <span className="text-mobile-pink">IA</span></h1>
     </>

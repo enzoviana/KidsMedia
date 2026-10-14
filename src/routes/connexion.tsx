@@ -7,7 +7,6 @@ import { Baby, HeartPulse, Stethoscope, Loader2, ArrowLeft, MessageSquareText, K
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import logo from "@/assets/logo.png.asset.json";
 import { MfaSwitcher, mfaHint, mfaNeedsSend, useMfa } from "@/components/auth/mfa";
 import { ApiError, forgotPassword, loginStart, mfaSend, roleToKey, setSession, type RoleKey, type PendingLogin, SECURITY_EVENT, type SecurityBlock } from "@/lib/api";
 import { SecurityBlockedScreen } from "@/components/dash/security-blocked";
@@ -169,7 +168,7 @@ function Connexion() {
       </div>
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <img src={logo.url} alt="Kids'Med IA" className="mx-auto h-28 w-28 object-contain" />
+          <img src="/logo.png" alt="Kids'Med IA" className="mx-auto h-28 w-28 object-contain" />
           <h1 className="mt-4 text-center font-display text-2xl font-semibold">Connexion</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">Une seule connexion pour tous les espaces</p>
           {step2 ? (
