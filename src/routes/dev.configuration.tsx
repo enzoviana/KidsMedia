@@ -28,8 +28,8 @@ export const Route = createFileRoute("/dev/configuration")({
 type F = { key: string; label: string; secret?: boolean; long?: boolean; hint?: string };
 const groups: { title: string; icon: typeof Mail; fields: F[] }[] = [
   { title: "E-mails", icon: Mail, fields: [
-    { key: "EMAIL_PROVIDER", label: "Fournisseur", hint: "resend ou sendgrid" },
-    { key: "RESEND_API_KEY", label: "Clé API e-mail", secret: true },
+    { key: "EMAIL_PROVIDER", label: "Fournisseur", hint: "smtp ou sendgrid" },
+    { key: "SENDGRID_API_KEY", label: "Clé API SendGrid", secret: true },
     { key: "EMAIL_FROM", label: "Adresse d'envoi", hint: "contact@kidsmed.fr" },
   ]},
   { title: "SMS (Twilio)", icon: MessageSquareText, fields: [
@@ -45,7 +45,7 @@ const groups: { title: string; icon: typeof Mail; fields: F[] }[] = [
     { key: "MSG_ALERTE_ACCES", label: "Alerte d'accès refusé (admin)", long: true, hint: "{nom}, {motif}, {lieu}" },
   ]},
 ];
-const demo = { EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_••••a1b2", EMAIL_FROM: "contact@kidsmed.fr", TWILIO_ACCOUNT_SID: "", TWILIO_AUTH_TOKEN: "", TWILIO_FROM: "", GEOCODING_API_KEY: "", MSG_MFA: "Kids'Med : votre code est {code}. Valable 10 minutes.", MSG_ALERTE_ACCES: "Accès refusé pour {nom} : {motif} ({lieu})." };
+const demo = { EMAIL_PROVIDER: "sendgrid", SENDGRID_API_KEY: "SG.••••a1b2", EMAIL_FROM: "contact@kidsmed.fr", TWILIO_ACCOUNT_SID: "", TWILIO_AUTH_TOKEN: "", TWILIO_FROM: "", GEOCODING_API_KEY: "", MSG_MFA: "Kids'Med : votre code est {code}. Valable 10 minutes.", MSG_ALERTE_ACCES: "Accès refusé pour {nom} : {motif} ({lieu})." };
 
 function Page() {
   const r = useApiOrDemo<Record<string, string>>(specs.devConfig, demo);

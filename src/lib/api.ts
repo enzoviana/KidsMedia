@@ -228,10 +228,17 @@ function isMissingRoute(err: unknown) {
   return err instanceof ApiError && (err.status === 404 || /route non trouv/i.test(err.message));
 }
 
-/** Méthode par défaut : application d'authentification si activée (gratuit), sinon SMS, sinon e-mail. */
+/**
+ * Méthode par défaut avec hiérarchie de priorité :
+ * 1. Passkey (Face ID/Touch ID) - priorité car pas d'envoi de code
+ * 2. Email - méthode par défaut si envoi de code nécessaire
+ * 3. TOTP (application d'authentification)
+ * 4. SMS - dernier recours
+ */
 export function defaultMethod(p: PendingLogin): "totp" | "passkey" | MfaChannel {
+  if (p.methodes?.passkey) return "passkey";
+  if (p.methodes?.email !== false) return "email";
   if (p.methodes?.totp) return "totp";
-  if (p.methodes && !p.methodes.sms) return "email";
   return "sms";
 }
 

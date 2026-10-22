@@ -7,8 +7,8 @@ import { Baby, HeartPulse, Stethoscope, Loader2, ArrowLeft, MessageSquareText, K
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MfaSwitcher, mfaHint, mfaNeedsSend, useMfa } from "@/components/auth/mfa";
-import { ApiError, forgotPassword, loginStart, mfaSend, roleToKey, setSession, type RoleKey, type PendingLogin, SECURITY_EVENT, type SecurityBlock } from "@/lib/api";
+import { MfaSwitcher, mfaHint, useMfa } from "@/components/auth/mfa";
+import { ApiError, forgotPassword, loginStart, mfaSend, roleToKey, setSession, defaultMethod, type RoleKey, type PendingLogin, SECURITY_EVENT, type SecurityBlock } from "@/lib/api";
 import { SecurityBlockedScreen } from "@/components/dash/security-blocked";
 import { roleHome, roleLabels } from "@/components/dash/shell";
 
@@ -95,9 +95,20 @@ function Connexion() {
       }
       if (p.session) { navigate({ to: roleHome[roleToKey(p.session.user.role)!] }); return; }
       mfa.reset();
-      setPending(mfaNeedsSend(p) ? await mfaSend(p, p.methodes && !p.methodes.sms ? "email" : "sms") : p);
+
+      // Déterminer la méthode par défaut selon la hiérarchie de priorité
+      const method = defaultMethod(p);
+
+      // N'envoyer le code que si la méthode nécessite un envoi (email ou sms)
+      if (method === "email" || method === "sms") {
+        setPending(await mfaSend(p, method));
+        setTimer(60);
+      } else {
+        // Pour passkey et totp, pas besoin d'envoi
+        setPending(p);
+      }
+
       setCode("");
-      setTimer(60);
     } catch (err) {
       setError(msg(err));
     } finally {
@@ -189,7 +200,9 @@ function Connexion() {
               </Button>
               <div className="flex items-center justify-between text-sm">
                 <button type="button" onClick={() => { setPending(null); setDemoRole(null); setError(null); }} className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Retour</button>
-                <button type="button" disabled={timer > 0} onClick={resend} className="text-primary disabled:text-muted-foreground">{timer > 0 ? `Renvoyer le code (${timer} s)` : "Renvoyer le code"}</button>
+                {(mfa.methode === "email" || mfa.methode === "sms") && (
+                  <button type="button" disabled={timer > 0} onClick={resend} className="text-primary disabled:text-muted-foreground">{timer > 0 ? `Renvoyer le code (${timer} s)` : "Renvoyer le code"}</button>
+                )}
               </div>
             </form>
           ) : (
