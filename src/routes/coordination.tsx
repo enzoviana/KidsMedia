@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { send } from "@/lib/mutate";
-import { MapPinned, Star, ClipboardList, Plus } from "lucide-react";
+import { MapPinned, Star, ClipboardList, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
 import { Panel, Pill, Empty, fmtDate } from "@/components/dash/widgets";
@@ -34,6 +34,7 @@ function Page() {
   const [assign, setAssign] = useState(false);
   const [request, setRequest] = useState(false);
   const [processing, setProcessing] = useState<any>(null);
+  const [editing, setEditing] = useState<any>(null);
   const ar = useApiOrDemo<unknown>(specs.affectationsToutes, store.affectations);
   const rr = useApiOrDemo<unknown>(specs.demandesRsai, store.demandes);
   const vr = useApiOrDemo<unknown>(specs.avisCoordination, store.avis);
@@ -57,7 +58,7 @@ function Page() {
     { name: "dateDebut", label: "À partir du", type: "date", required: true }, { name: "dateFin", label: "Jusqu'au", type: "date" },
   ];
   if (!["admin", "dev", "creche", "rsai"].includes(role)) return <DashboardShell title="Coordination"><Empty text="Cet espace est réservé aux crèches, RSAI et administrateurs." /></DashboardShell>;
-  return <DashboardShell title={admin ? "Supervision & coordination" : "Coordination RSAI"} actions={<div className="flex flex-wrap gap-2">{admin && <Button onClick={() => { setProcessing(null); setAssign(true); }}><Plus className="mr-1 h-4 w-4" />Affecter une RSAI</Button>}{role === "creche" && <Button onClick={() => setRequest(true)}>Demander une RSAI</Button>}</div>}>
+  return <DashboardShell title={admin ? "Supervision & coordination" : "Coordination RSAI"} actions={<div className="flex flex-wrap gap-2">{admin && <Button onClick={() => { setProcessing(null); setEditing(null); setAssign(true); }}><Plus className="mr-1 h-4 w-4" />Affecter une RSAI</Button>}{role === "creche" && <Button onClick={() => setRequest(true)}>Demander une RSAI</Button>}</div>}>
     {admin && <DocumentAlerts />}
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel className="lg:col-span-2" title={`Affectations ${annee} (${assignments.length})`} icon={MapPinned} spec={specs.affectationsToutes} demo={ar.demo} reason={ar.reason}>
@@ -66,36 +67,64 @@ function Page() {
           <select aria-label="Statut" className="h-9 rounded-md border bg-background px-2 text-sm" value={statutF} onChange={(e) => setStatutF(e.target.value)}>{STATUTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           <Input className="h-9 flex-1 min-w-40" placeholder="Rechercher une RSAI ou une crèche…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <AffectationsTable rows={assignments} role={role} admin={admin} days={days} />
+        <AffectationsTable rows={assignments} role={role} admin={admin} days={days} onEdit={(a) => { setProcessing(null); setEditing(a); setAssign(true); }} />
 
       </Panel>
       {(admin || role === "creche") && <Panel title="Demandes d'intervention" icon={ClipboardList} spec={specs.demandesRsai} demo={rr.demo} reason={rr.reason}>
-        {requests.length ? requests.map((d) => <div key={d._id} className="space-y-2 border-b py-4 last:border-0"><div className="flex flex-wrap justify-between gap-2"><p className="font-medium">{d.etablissement?.nom}</p><Pill tone={d.statut === "acceptee" ? "success" : d.statut === "refusee" ? "danger" : "warning"}>{d.statut.replaceAll("_", " ")}</Pill></div><p className="text-sm">{d.motif}</p><p className="text-xs text-muted-foreground">Souhaitée le {fmtDate(d.dateSouhaitee)}</p>{admin && d.statut === "en_attente" && <div className="flex gap-2"><Button size="sm" onClick={() => { setProcessing(d); setAssign(true); }}>Accepter & affecter</Button><Button size="sm" variant="outline" onClick={async () => { try { await writeSpec(specs.demandeRsaiTraiter, { statut: "refusee", motif: "Intervention indisponible" }, { demandeId: d._id }); updateCoordination("demandes", (rows) => rows.map((r) => r._id === d._id ? { ...r, statut: "refusee" } : r)); toast.success("Demande refusée (démo)"); } catch (e) { toast.error((e as Error).message); } }}>Refuser</Button></div>}</div>) : <Empty />}
+        {requests.length ? requests.map((d) => <div key={d._id} className="space-y-2 border-b py-4 last:border-0"><div className="flex flex-wrap justify-between gap-2"><p className="font-medium">{d.etablissement?.nom}</p><Pill tone={d.statut === "acceptee" ? "success" : d.statut === "refusee" ? "danger" : "warning"}>{d.statut.replaceAll("_", " ")}</Pill></div><p className="text-sm">{d.motif}</p><p className="text-xs text-muted-foreground">Souhaitée le {fmtDate(d.dateSouhaitee)}</p>{admin && d.statut === "en_attente" && <div className="flex gap-2"><Button size="sm" onClick={() => { setProcessing(d); setEditing(null); setAssign(true); }}>Accepter & affecter</Button><Button size="sm" variant="outline" onClick={async () => { try { await writeSpec(specs.demandeRsaiTraiter, { statut: "refusee", motif: "Intervention indisponible" }, { demandeId: d._id }); updateCoordination("demandes", (rows) => rows.map((r) => r._id === d._id ? { ...r, statut: "refusee" } : r)); toast.success("Demande refusée (démo)"); } catch (e) { toast.error((e as Error).message); } }}>Refuser</Button></div>}</div>) : <Empty />}
       </Panel>}
       <Panel title="Avis crèches & RSAI" icon={Star} spec={specs.avisCoordination} demo={vr.demo} reason={vr.reason}>
         {reviews.map((v) => <div key={v._id} className="space-y-1 border-b py-3 last:border-0"><div className="flex flex-wrap justify-between gap-2"><span className="font-medium">{v.cibleNom}</span><span className="flex items-center gap-1 text-sm"><Star className="h-4 w-4 fill-warning text-warning" />{v.note}/5</span></div><p className="text-sm">{v.commentaire}</p><p className="text-xs text-muted-foreground">{v.auteurNom} · {v.auteurRole} · {fmtDate(v.createdAt)}</p></div>)}
       </Panel>
     </div>
-    <FormDialog open={assign} onOpenChange={setAssign} title="Affecter une RSAI à une crèche" fields={fields} initial={{ jours: "1,2,3,4,5", debut: "08:00", fin: "18:00", etablissement: processing?.etablissement?._id ?? "" }} onSubmit={async (v) => {
-      const jours = String(v.jours).split(",").map((j) => Number(j.trim()));
-      if (!validSchedule(v.debut, v.fin, jours) || (v.dateFin && v.dateFin < v.dateDebut)) { toast.error("Vérifiez les jours, horaires et dates."); throw new Error("Horaires incohérents"); }
-      const rsaiId = String(v.rsai); const etablissementId = String(v.etablissement);
-      if (processing && etablissementId !== processing.etablissement._id) { toast.error("Choisissez la crèche qui a fait la demande."); throw new Error("Crèche différente de la demande"); }
-      const rsai = rsais.find((r) => r._id === rsaiId); const etablissement = etabs.find((r) => r._id === etablissementId);
-      try { const res = await send<any>("POST", specs.affectationCreer.path, { rsaiId, crecheId: etablissementId, etablissementId, jours, debut: v.debut, fin: v.fin, dateDebut: v.dateDebut, dateFin: v.dateFin || undefined, demandeId: processing?._id });
-        const id = res.data?._id ?? localId(); updateCoordination("affectations", (rows) => [{ ...v, _id: id, rsai: { _id: rsaiId, nom: rsai?.nomComplet }, etablissement, jours, statut: "active" }, ...rows]);
-        if (processing) { await writeSpec(specs.demandeRsaiTraiter, { statut: "acceptee", affectationId: id }, { demandeId: processing._id }); updateCoordination("demandes", (rows) => rows.map((r) => r._id === processing._id ? { ...r, statut: "acceptee" } : r)); }
-        qc.invalidateQueries({ queryKey: ["api", specs.affectationsToutes.id] }); qc.invalidateQueries({ queryKey: ["api", specs.demandesRsai.id] }); qc.invalidateQueries({ queryKey: ["api", specs.rsaiAffectations.id] });
-        toast.success(res.demo ? "Affectation créée (démo)" : "Affectation enregistrée");
-      } catch (e) { toast.error(`Le serveur a refusé l'affectation : ${(e as Error).message}`); throw e; }
-    }} />
+    <FormDialog
+      open={assign}
+      onOpenChange={(o) => { setAssign(o); if (!o) setEditing(null); }}
+      title={editing ? "Modifier l'affectation" : "Affecter une RSAI à une crèche"}
+      fields={fields}
+      initial={editing ? {
+        rsai: editing.rsai?._id ?? editing.rsaiId ?? "",
+        etablissement: editing.etablissement?._id ?? editing.etablissementId ?? "",
+        jours: Array.isArray(editing.jours) ? editing.jours.join(",") : editing.jours ?? "1,2,3,4,5",
+        debut: editing.debut ?? "08:00",
+        fin: editing.fin ?? "18:00",
+        dateDebut: editing.dateDebut ? String(editing.dateDebut).slice(0, 10) : "",
+        dateFin: editing.dateFin ? String(editing.dateFin).slice(0, 10) : "",
+      } : { jours: "1,2,3,4,5", debut: "08:00", fin: "18:00", etablissement: processing?.etablissement?._id ?? "" }}
+      onSubmit={async (v) => {
+        const jours = String(v.jours).split(",").map((j) => Number(j.trim())).filter((j) => Number.isInteger(j) && j >= 1 && j <= 7);
+        if (!validSchedule(v.debut, v.fin, jours) || (v.dateFin && v.dateFin < v.dateDebut)) { toast.error("Vérifiez les jours, horaires et dates."); throw new Error("Horaires incohérents"); }
+        const rsaiId = String(v.rsai); const etablissementId = String(v.etablissement);
+        if (processing && etablissementId !== processing.etablissement._id) { toast.error("Choisissez la crèche qui a fait la demande."); throw new Error("Crèche différente de la demande"); }
+        const rsai = rsais.find((r) => r._id === rsaiId); const etablissement = etabs.find((r) => r._id === etablissementId);
+        const body = { rsaiId, etablissementId, jours, debut: v.debut, fin: v.fin, dateDebut: v.dateDebut, dateFin: v.dateFin || null };
+        try {
+          if (editing) {
+            const res = await send<any>("PUT", specs.affectationModifier.path, body, { affectationId: editing._id });
+            updateCoordination("affectations", (rows) => rows.map((r) => r._id === editing._id ? { ...r, ...body, etablissement, rsai: { _id: rsaiId, nom: rsai?.nomComplet } } : r));
+            toast.success(res.demo ? "Affectation modifiée (démo)" : "Affectation modifiée");
+          } else {
+            const res = await send<any>("POST", specs.affectationCreer.path, { ...body, crecheId: etablissementId, demandeId: processing?._id });
+            const id = res.data?._id ?? localId();
+            updateCoordination("affectations", (rows) => [{ ...v, _id: id, rsai: { _id: rsaiId, nom: rsai?.nomComplet }, etablissement, jours, statut: "active" }, ...rows]);
+            if (processing) { await writeSpec(specs.demandeRsaiTraiter, { statut: "acceptee", affectationId: id }, { demandeId: processing._id }); updateCoordination("demandes", (rows) => rows.map((r) => r._id === processing._id ? { ...r, statut: "acceptee" } : r)); }
+            toast.success(res.demo ? "Affectation créée (démo)" : "Affectation enregistrée");
+          }
+          qc.invalidateQueries({ queryKey: ["api", specs.affectationsToutes.id] });
+          qc.invalidateQueries({ queryKey: ["api", specs.demandesRsai.id] });
+          qc.invalidateQueries({ queryKey: ["api", specs.rsaiAffectations.id] });
+          setEditing(null);
+        } catch (e) { toast.error(`Le serveur a refusé l'affectation : ${(e as Error).message}`); throw e; }
+      }}
+    />
     <FormDialog open={request} onOpenChange={setRequest} title="Demander une RSAI" fields={[{ name: "rsai", label: "RSAI souhaitée (facultatif)", lookup: "rsai" }, { name: "motif", label: "Besoin", type: "textarea", required: true }, { name: "dateSouhaitee", label: "Date souhaitée", type: "date", required: true }]} onSubmit={async (v) => {
       try { const res = await writeSpec(specs.demandeRsaiCreer, { motif: v.motif, dateSouhaitee: v.dateSouhaitee, rsaiId: v.rsai || undefined }); updateCoordination("demandes", (rows) => [{ ...v, _id: localId(), etablissement: etabChoices[0], statut: "en_attente" }, ...rows]); toast.success(res.demo ? "Demande transmise à l'admin (démo)" : "Demande transmise à l'admin"); } catch (e) { toast.error((e as Error).message); throw e; }
     }} />
   </DashboardShell>;
 }
 
-function AffectationsTable({ rows, role, admin, days }: { rows: any[]; role: string; admin: boolean; days: string[] }) {
+function AffectationsTable({ rows, role, admin, days, onEdit }: { rows: any[]; role: string; admin: boolean; days: string[]; onEdit: (a: any) => void }) {
+  const qc = useQueryClient();
   const [size, setSize] = useState(25);
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / size));
@@ -123,7 +152,8 @@ function AffectationsTable({ rows, role, admin, days }: { rows: any[]; role: str
                   <td className="p-3"><Pill tone={tone(st)}>{st.replaceAll("_", " ")}</Pill></td>
                   <td className="p-3"><div className="flex justify-end gap-2">
                     {role === "rsai" && st === "active" && <RatingButton target="etablissement" id={a.etablissement?._id} name={a.etablissement?.nom} />}
-                    {admin && st === "active" && <Button variant="outline" size="sm" onClick={async () => { try { await writeSpec(specs.affectationRevoquer, undefined, { affectationId: a._id }); updateCoordination("affectations", (rs) => rs.map((r) => r._id === a._id ? { ...r, statut: "revoquee" } : r)); toast.success("Affectation révoquée"); } catch (e) { toast.error((e as Error).message); } }}>Révoquer</Button>}
+                    {admin && st !== "revoquee" && <Button variant="outline" size="sm" onClick={() => onEdit(a)}><Pencil className="mr-1 h-3.5 w-3.5" />Modifier</Button>}
+                    {admin && st !== "revoquee" && <Button variant="outline" size="sm" onClick={async () => { try { await writeSpec(specs.affectationRevoquer, undefined, { affectationId: a._id }); updateCoordination("affectations", (rs) => rs.map((r) => r._id === a._id ? { ...r, statut: "revoquee" } : r)); qc.invalidateQueries({ queryKey: ["api", specs.affectationsToutes.id] }); toast.success("Affectation révoquée"); } catch (e) { toast.error((e as Error).message); } }}>Révoquer</Button>}
                   </div></td>
                 </tr>
               );
