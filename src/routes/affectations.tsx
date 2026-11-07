@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MapPinned, Clock, MapPin, CheckCircle2, XCircle, Baby } from "lucide-react";
 import { DashboardShell } from "@/components/dash/shell";
-import { Panel, Pill } from "@/components/dash/widgets";
+import { Panel, Pill, Empty } from "@/components/dash/widgets";
 import { Button } from "@/components/ui/button";
 import { specs } from "@/lib/specs";
 import { getSession, toList } from "@/lib/api";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/affectations")({
   component: Page,
 });
 
-const jours = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 /** Accepte les formats serveur (horaires[] ou jours/debut/fin, creche ou etablissement, valeurs nulles). */
 function normalize(a: any, i: number): Affectation {
@@ -39,7 +39,7 @@ function normalize(a: any, i: number): Affectation {
       _id: String(e._id ?? e.id ?? a?.etablissementId ?? a?.crecheId ?? `aff-${i}`),
       nom: e.nom ?? e.name ?? "Crèche",
       adresse: typeof e.adresse === "string" ? e.adresse : e.adresse?.rue ?? "",
-      lat: Number(e.lat ?? e.latitude ?? 0), lng: Number(e.lng ?? e.longitude ?? 0), rayonM: Number(e.rayonM ?? 150),
+      lat: Number(e.lat ?? e.latitude ?? 0), lng: Number(e.lng ?? e.longitude ?? 0), rayonM: Number(e.rayonM ?? e.rayonMetres ?? 50),
     },
     horaires,
     enfants: a?.enfants,
@@ -47,7 +47,7 @@ function normalize(a: any, i: number): Affectation {
 }
 
 function Page() {
-  const r = useApiOrDemo<unknown>(specs.rsaiAffectations, demoAffectations);
+  const r = useApiOrDemo<unknown>(specs.rsaiAffectations, demoAffectations, undefined, { fallbackToDemo: false });
   const store = useCoordination();
   const mapped = store.affectations.filter((a) => a.statut === "active").map((a): Affectation | null => {
     const base = demoAffectations.find((d) => d.etablissement._id === a.etablissement?._id) ?? demoAffectations[0];
@@ -65,6 +65,16 @@ function Page() {
   }, [demo]);
 
   const now = new Date();
+  const todayIso = ((now.getDay() + 6) % 7) + 1;
+  if (!demo && !r.loading && list.length === 0) {
+    return (
+      <DashboardShell role="rsai" title="Mes affectations">
+        <Panel title="Aucune crèche affectée" spec={specs.rsaiAffectations} demo={false}>
+          <Empty text="Votre compte RSAI n'est rattaché à aucune crèche. L'administrateur doit vous affecter pour voir vos horaires, vos missions et ouvrir les dossiers. Aucune donnée de démonstration n'est affichée." />
+        </Panel>
+      </DashboardShell>
+    );
+  }
   return (
     <DashboardShell role="rsai" title="Mes affectations">
       {demo && (
@@ -91,7 +101,7 @@ function Page() {
               </div>
               <p className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><Clock className="h-3 w-3" />Mes horaires</p>
               <ul className="mb-4 space-y-1 text-sm">
-                {a.horaires.map((h, i) => <li key={i} className="flex justify-between"><span>{jours[h.jour]}</span><span className="flex items-center gap-2">{h.jour === now.getDay() && <Pill tone="success">Aujourd'hui</Pill>}<span className="font-medium">{h.debut} – {h.fin}</span></span></li>)}
+                {a.horaires.map((h, i) => <li key={i} className="flex justify-between"><span>{jours[h.jour - 1]}</span><span className="flex items-center gap-2">{h.jour === todayIso && <Pill tone="success">Aujourd'hui</Pill>}<span className="font-medium">{h.debut} – {h.fin}</span></span></li>)}
               </ul>
               <Button size="sm" disabled={!res.ok} asChild={res.ok}>
                 {res.ok ? <Link to="/enfants"><Baby className="mr-1 h-4 w-4" />Voir les {a.enfants ?? ""} enfants</Link> : <span><Baby className="mr-1 h-4 w-4" />Dossiers verrouillés</span>}

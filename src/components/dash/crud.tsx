@@ -15,7 +15,7 @@ import { AddressField } from "./address";
 export interface Field {
   name: string;
   label: string;
-  type?: "text" | "date" | "number" | "email" | "tel" | "select" | "textarea" | "checkbox" | "address";
+  type?: "text" | "date" | "number" | "email" | "tel" | "select" | "textarea" | "checkbox" | "address" | "days";
   options?: string[];
   /** Sélecteur par nom (envoie l'identifiant) */
   lookup?: LookupKind;
@@ -46,6 +46,40 @@ const get = (o: any, k: string) => {
   if (Array.isArray(v)) return v.map((x) => (typeof x === "object" ? x.nom ?? x.name : x)).join(", ");
   return v ?? "";
 };
+
+const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+function parseJours(value: unknown): number[] {
+  if (Array.isArray(value)) return value.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 7);
+  return String(value ?? "")
+    .split(/[,\s]+/)
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 7);
+}
+
+/** Cases à cocher lundi → dimanche. La valeur envoyée est « 1,2,3,4,5 ». */
+function DaysField({ name, required, defaultValue }: { name: string; required?: boolean | undefined; defaultValue?: string | undefined }) {
+  const [days, setDays] = useState<number[]>(() => parseJours(defaultValue));
+  const toggle = (day: number) => setDays((d) => (d.includes(day) ? d.filter((x) => x !== day) : [...d, day].sort((a, b) => a - b)));
+  return (
+    <div>
+      <input type="hidden" name={name} value={days.join(",")} />
+      <div className="flex flex-wrap gap-1">
+        {JOURS.map((label, index) => {
+          const day = index + 1;
+          const active = days.includes(day);
+          return (
+            <button key={day} type="button" aria-pressed={active} onClick={() => toggle(day)}
+              className={`rounded-md border px-2.5 py-1 text-xs font-medium transition ${active ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      {required && days.length === 0 && <p className="mt-1 text-xs text-destructive">Sélectionnez au moins un jour.</p>}
+    </div>
+  );
+}
 
 export function FormDialog({ open, onOpenChange, title, description, fields, initial, submitLabel = "Enregistrer", onSubmit, children }: {
   open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string; fields: Field[]; initial?: any;
@@ -90,6 +124,8 @@ export function FormDialog({ open, onOpenChange, title, description, fields, ini
                       <LookupField kind={f.lookup} id={f.name} name={f.name} required={f.required} quickCreate={f.quickCreate} defaultValue={dv} />
                     ) : f.type === "address" ? (
                       <AddressField id={f.name} required={f.required} defaultValue={dv} />
+                    ) : f.type === "days" ? (
+                      <DaysField name={f.name} required={f.required} defaultValue={dv} />
                     ) : f.type === "select" ? (
                       <select id={f.name} name={f.name} defaultValue={dv} required={f.required} className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
                         <option value="">—</option>

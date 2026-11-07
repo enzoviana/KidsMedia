@@ -48,11 +48,11 @@ function Page() {
   const assignments = filterAffectations(allAssignments, annee, statutF, q);
   const requests = rr.demo ? store.demandes : toList(rr.data);
   const reviews = vr.demo ? store.avis : toList(vr.data);
-  const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
   const fields: Field[] = [
     { name: "rsai", label: "RSAI", lookup: "rsai", required: true },
     { name: "etablissement", label: "Crèche", lookup: "etablissement", required: true },
-    { name: "jours", label: "Jours (0 dimanche … 6 samedi)", type: "text", required: true },
+    { name: "jours", label: "Jours d'intervention", type: "days", required: true },
     { name: "debut", label: "Début (HH:MM)", required: true }, { name: "fin", label: "Fin (HH:MM)", required: true },
     { name: "dateDebut", label: "À partir du", type: "date", required: true }, { name: "dateFin", label: "Jusqu'au", type: "date" },
   ];
@@ -118,7 +118,7 @@ function AffectationsTable({ rows, role, admin, days }: { rows: any[]; role: str
                 <tr key={a._id} className="border-t align-top hover:bg-muted/30">
                   <td className="p-3 font-medium">{a.rsai?._id ? <Link to="/fiche-rsai/$rsaiId" params={{ rsaiId: String(a.rsai._id) }} className="hover:underline">{nom}</Link> : nom}</td>
                   <td className="p-3">{a.etablissement?.nom ?? a.creche?.nom ?? "—"}</td>
-                  <td className="p-3 text-muted-foreground">{(a.jours ?? []).map((j: number) => days[j]).join(", ")}<br />{a.debut}–{a.fin}</td>
+                  <td className="p-3 text-muted-foreground">{(a.jours ?? []).map((j: number) => days[j - 1]).join(", ")}<br />{a.debut}–{a.fin}</td>
                   <td className="p-3 text-muted-foreground">{fmtDate(a.dateDebut)}{a.dateFin ? ` → ${fmtDate(a.dateFin)}` : " → sans fin"}</td>
                   <td className="p-3"><Pill tone={tone(st)}>{st.replaceAll("_", " ")}</Pill></td>
                   <td className="p-3"><div className="flex justify-end gap-2">

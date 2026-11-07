@@ -24,9 +24,14 @@ const etabId = () => userParams(getSession()?.user ?? ({} as any))["etablissemen
 const SYM_ID: Record<string, string> = { "Fièvre": "fievre", Toux: "toux", "Respiration sifflante": "sifflement", "Nez qui coule": "nez", "Éruption cutanée": "eruption", Vomissements: "vomissements", "Diarrhée": "diarrhee", Fatigue: "fatigue", "Mal de gorge": "gorge", "Mal d'oreille": "oreille" };
 
 function useEnfants(role: string) {
-  const r = useApiOrDemo<any>(role === "parent" ? specs.parentEnfants : specs.enfantsEtab, role === "parent" ? [mEnfants[0]] : mEnfants);
+  const r = useApiOrDemo<any>(
+    role === "parent" ? specs.parentEnfants : specs.enfantsEtab,
+    role === "parent" ? [mEnfants[0]] : mEnfants,
+    undefined,
+    role === "rsai" ? { fallbackToDemo: false } : undefined,
+  );
   const list = toList(r.data);
-  return { list: list.length ? list : r.demo ? mEnfants : [], demo: r.demo };
+  return { list: list.length ? list : r.demo ? mEnfants : [], demo: r.demo, loading: r.loading ?? false };
 }
 const idOf = (e: any) => String(e.id ?? e._id);
 
@@ -348,22 +353,44 @@ export function useGeo() {
 }
 
 export function RsaiHome({ geo }: { geo: ReturnType<typeof useGeo> }) {
-  const a = useApiOrDemo<any>(specs.rsaiAffectations, mRsai.missions);
+  const a = useApiOrDemo<any>(specs.rsaiAffectations, mRsai.missions, undefined, { fallbackToDemo: false });
   const missions = toList(a.data);
+  const real = !getSession()?.demo;
+  const user = getSession()?.user;
+  const nom = real ? [user?.prenom, user?.nom].filter(Boolean).join(" ") || "RSAI" : mRsai.nom;
+  const qualification = real ? ((user as any)?.qualification ?? "RSAI") : mRsai.qualification;
+
+  if (real && a.loading)
+    return <div className="px-4 pt-4"><Empty>Chargement de vos affectations…</Empty></div>;
+
+  if (real && !a.loading && missions.length === 0)
+    return (
+      <div className="px-4 pt-4">
+        <Empty>
+          <span className="block font-display text-lg font-bold text-foreground">Aucune crèche affectée</span>
+          <span className="mt-2 block text-sm">Votre compte RSAI n'est rattaché à aucune crèche. L'administrateur doit vous affecter pour voir les enfants, les registres et les avis. Aucune donnée de démonstration n'est affichée.</span>
+        </Empty>
+      </div>
+    );
+
   return (
     <div className="space-y-2.5 px-4 pt-4">
-      <Glass className="flex items-center gap-2.5"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[image:var(--gradient-mobile)] font-display text-lg font-bold text-on-vivid">{mRsai.nom[0]}</span>
-        <div className="flex-1"><p className="text-base font-bold">{mRsai.nom}</p><p className="text-muted-foreground">{mRsai.qualification}</p><p className="mt-1 flex items-center gap-2"><Stars n={mRsai.note} /><span className="text-[13px] text-muted-foreground">{mRsai.note} · {mRsai.nbAvis} avis</span></p></div></Glass>
+      <Glass className="flex items-center gap-2.5"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[image:var(--gradient-mobile)] font-display text-lg font-bold text-on-vivid">{nom[0]}</span>
+        <div className="flex-1"><p className="text-base font-bold">{nom}</p><p className="text-muted-foreground">{qualification}</p>{!real && <p className="mt-1 flex items-center gap-2"><Stars n={mRsai.note} /><span className="text-[13px] text-muted-foreground">{mRsai.note} · {mRsai.nbAvis} avis</span></p>}</div></Glass>
       <Glass className={`flex items-center gap-2.5 ${geo.on ? "!border-brand-green/50" : "!border-mobile-pink/40"}`}>
         <IconTile icon={MapPin} tone={geo.on ? "green" : "pink"} />
         <div className="flex-1"><p className="font-bold">Géolocalisation</p><p className="text-[13px] text-muted-foreground">{geo.on ? "Sur site · dossiers déverrouillés" : "Activez-la sur site pour accéder aux enfants et registres"}</p></div>
         <button role="switch" aria-checked={geo.on} aria-label="Géolocalisation" onClick={geo.toggle} className={`relative h-8 w-10 rounded-full transition ${geo.on ? "bg-brand-green" : "bg-muted"}`}><span className={`absolute top-1 h-6 w-6 rounded-full bg-card shadow transition-all ${geo.on ? "left-7" : "left-1"}`} /></button>
       </Glass>
       <SectionTitle>Missions du jour</SectionTitle>
-      {missions.map((m: any, i: number) => (
-        <Glass key={m.id ?? i}><div className="flex items-center justify-between gap-2"><p className="text-[15px] font-bold">{m.creche?.nom ?? m.creche}</p><Pill tone={m.statut === "en_cours" ? "green" : "blue"} dot>{m.statut === "en_cours" ? "En cours" : "À venir"}</Pill></div>
-          <p className="mt-1 flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" />{m.adresse ?? m.creche?.adresse ?? ""}</p><p className="mt-1 flex items-center gap-2 font-semibold text-mobile-blue"><Calendar className="h-4 w-4" />{m.horaire ?? `${m.debut ?? ""} – ${m.fin ?? ""}`}</p></Glass>
-      ))}
+      {missions.map((m: any, i: number) => {
+        const etab = m.etablissement ?? m.creche;
+        const nomEtab = typeof etab === "string" ? etab : etab?.nom ?? "Crèche";
+        const adresse = (typeof etab === "object" ? etab?.adresse : null) ?? m.adresse ?? "";
+        const horaire = m.horaire ?? (m.horaires?.length ? `${m.horaires[0].debut} – ${m.horaires[0].fin}` : `${m.debut ?? ""} – ${m.fin ?? ""}`);
+        return <Glass key={m.id ?? m._id ?? i}><div className="flex items-center justify-between gap-2"><p className="text-[15px] font-bold">{nomEtab}</p><Pill tone={m.statut === "en_cours" ? "green" : "blue"} dot>{m.statut === "en_cours" ? "En cours" : "À venir"}</Pill></div>
+          <p className="mt-1 flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" />{adresse}</p><p className="mt-1 flex items-center gap-2 font-semibold text-mobile-blue"><Calendar className="h-4 w-4" />{horaire}</p></Glass>;
+      })}
     </div>
   );
 }
@@ -378,36 +405,70 @@ function Locked({ geo }: { geo: ReturnType<typeof useGeo> }) {
   );
 }
 export function RsaiEnfants({ geo, open }: { geo: ReturnType<typeof useGeo>; open: (id: string) => void }) {
-  const { list } = useEnfants("rsai");
+  const { list, loading } = useEnfants("rsai");
   const [scan, setScan] = useState(false);
+  const real = !getSession()?.demo;
   if (!geo.on) return <Locked geo={geo} />;
+  if (loading) return <div className="px-4 pt-4"><Empty>Chargement des enfants…</Empty></div>;
+  if (real && list.length === 0) {
+    return <div className="px-4 pt-4"><Empty><span className="block font-display text-lg font-bold text-foreground">Aucun enfant visible</span><span className="mt-2 block text-sm">Aucune crèche ne vous est affectée, ou aucun enfant n'est rattaché à votre périmètre. L'administrateur doit vous affecter avant que les dossiers apparaissent.</span></Empty></div>;
+  }
   return <div className="space-y-2 px-4 pt-4"><ScanBtn onClick={() => setScan(true)} />{scan && <QrScanner onClose={() => setScan(false)} onChild={(id) => open(mapDemoId(id, list))} />}{list.map((e) => <Glass key={idOf(e)} onClick={() => open(idOf(e))} className="flex items-center gap-2.5 !p-3"><Avatar e={e} /><div className="min-w-0 flex-1"><p className="flex items-center gap-2 font-bold">{name(e)}{e.pai && <Pill tone="pink">PAI</Pill>}</p><Status s={e.statut} /></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></Glass>)}</div>;
 }
 export function RsaiRegistres({ geo }: { geo: ReturnType<typeof useGeo> }) {
-  const [regs, setRegs] = useState(mRegistres);
+  const real = !getSession()?.demo;
+  const soins = useApiOrDemo<any>(specs.registreEntrees, [], { registre: "soins" }, { fallbackToDemo: false });
+  const incidents = useApiOrDemo<any>(specs.registreEntrees, [], { registre: "incidents" }, { fallbackToDemo: false });
+  const [extra, setExtra] = useState<Record<string, any[]>>({});
   const [add, setAdd] = useState<string | null>(null);
   const [txt, setTxt] = useState("");
   if (!geo.on) return <Locked geo={geo} />;
+  if (soins.loading || incidents.loading) return <div className="px-4 pt-4"><Empty>Chargement des registres…</Empty></div>;
+
+  const mapEntrees = (data: any) => toList(data).map((e: any) => ({
+    at: e.createdAt ?? e.at ?? new Date().toISOString(),
+    texte: e.texte,
+    auteur: e.auteurId ? "Moi" : e.auteur ?? "—",
+  }));
+  const regs = real
+    ? [
+        { id: "soins", titre: "Registre des soins", type: "soins", entrees: mapEntrees(soins.data) },
+        { id: "incidents", titre: "Registre des incidents", type: "incidents", entrees: mapEntrees(incidents.data) },
+      ]
+    : mRegistres;
+  const entriesOf = (r: any) => [...(extra[r.id] ?? []), ...r.entrees];
+
+  if (real && regs.every((r) => entriesOf(r).length === 0)) {
+    return <div className="px-4 pt-4"><Empty><span className="block font-display text-lg font-bold text-foreground">Aucune entrée de registre</span><span className="mt-2 block text-sm">Aucune crèche ne vous est affectée, ou aucune entrée n'a encore été saisie. Les registres apparaîtront après votre affectation et les premières saisies.</span></Empty></div>;
+  }
+
   return (
     <div className="space-y-2.5 px-4 pt-4">
       {regs.map((r) => (
         <Glass key={r.id}><div className="flex items-center gap-2"><IconTile icon={r.type === "soins" ? ClipboardList : Flame} tone={r.type === "soins" ? "blue" : "pink"} /><p className="flex-1 text-[15px] font-bold">{r.titre}</p><button aria-label="Ajouter une entrée" onClick={() => setAdd(r.id)} className="grid h-8 w-8 place-items-center rounded-full bg-mobile-blue text-on-vivid"><Plus className="h-5 w-5" /></button></div>
-          {r.entrees.map((x, i) => <div key={i} className="mt-3 border-t pt-3"><p>{x.texte}</p><p className="text-[13px] text-muted-foreground">{x.auteur} · {ago(x.at)}</p></div>)}</Glass>
+          {entriesOf(r).map((x, i) => <div key={i} className="mt-3 border-t pt-3"><p>{x.texte}</p><p className="text-[13px] text-muted-foreground">{x.auteur} · {ago(x.at)}</p></div>)}</Glass>
       ))}
       {add && <Sheet title="Nouvelle entrée" onClose={() => setAdd(null)}>
         <textarea className={`${inputCls} min-h-28 resize-none`} placeholder="Enfant, soin ou incident, mesures prises…" value={txt} onChange={(x) => setTxt(x.target.value)} />
         <div className="mt-4"><PrimaryBtn onClick={async () => {
-          if (!txt.trim()) return; const r = await send("POST", `/registres/${add}/entrees`, { texte: txt }).catch((x) => { toast.error(x.message); return null; });
-          if (!r) return; setRegs((v) => v.map((g) => (g.id === add ? { ...g, entrees: [{ at: new Date().toISOString(), texte: txt, auteur: "Moi" }, ...g.entrees] } : g))); setTxt(""); setAdd(null); toast.success(`Entrée ajoutée${r.demo ? " (démo)" : ""}`);
+          if (!txt.trim()) return; const res = await send("POST", `/registres/${add}/entrees`, { texte: txt }).catch((x) => { toast.error(x.message); return null; });
+          if (!res) return;
+          setExtra((prev) => ({ ...prev, [add]: [{ at: new Date().toISOString(), texte: txt, auteur: "Moi" }, ...(prev[add] ?? [])] }));
+          setTxt(""); setAdd(null); toast.success(`Entrée ajoutée${res.demo ? " (démo)" : ""}`);
         }}>Enregistrer</PrimaryBtn></div>
       </Sheet>}
     </div>
   );
 }
 export function RsaiAvis() {
-  const r = useApiOrDemo<any>(specs.avisCoordination, mAvis);
+  const r = useApiOrDemo<any>(specs.avisCoordination, mAvis, undefined, { fallbackToDemo: false });
   const list = toList(r.data);
+  const real = !getSession()?.demo;
+  if (real && r.loading) return <div className="px-4 pt-4"><Empty>Chargement des avis…</Empty></div>;
   const moy = list.length ? list.reduce((s: number, a: any) => s + Number(a.note ?? 0), 0) / list.length : 0;
+  if (real && list.length === 0) {
+    return <div className="px-4 pt-4"><Empty><span className="block font-display text-lg font-bold text-foreground">Aucun avis pour le moment</span><span className="mt-2 block text-sm">Les avis des crèches apparaîtront ici après vos missions. Aucune donnée de démonstration n'est affichée.</span></Empty></div>;
+  }
   return (
     <div className="space-y-2.5 px-4 pt-4">
       <Glass className="text-center"><p className="font-display text-6xl font-bold">{moy.toFixed(1)}</p><div className="mt-1 flex justify-center"><Stars n={moy} /></div><p className="mt-1 text-muted-foreground">{list.length} avis des crèches</p></Glass>

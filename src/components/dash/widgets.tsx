@@ -25,17 +25,17 @@ export function Panel({ title, icon: Icon, spec, demo, reason, actions, children
 }
 
 /** Panel qui charge lui-même ses données (API ou démo). */
-export function DataPanel<T>({ spec, demoData, children, vars, ...rest }: {
-  spec: RouteSpec; demoData: T; vars?: Record<string, string | undefined>; title: string; icon?: LucideIcon; actions?: ReactNode; className?: string; id?: string; children: (d: T) => ReactNode;
+export function DataPanel<T>({ spec, demoData, children, vars, realOnly, ...rest }: {
+  spec: RouteSpec; demoData: T; vars?: Record<string, string | undefined>; realOnly?: boolean; title: string; icon?: LucideIcon; actions?: ReactNode; className?: string; id?: string; children: (d: T) => ReactNode;
 }) {
-  const r = useApiOrDemo<T>(spec, demoData, vars);
+  const r = useApiOrDemo<T>(spec, demoData, vars, { fallbackToDemo: !realOnly });
   return <Panel spec={spec} demo={r.demo} reason={r.reason} {...rest}>{children(r.data)}</Panel>;
 }
 
-export function StatCard<T>({ label, icon: Icon, spec, demoData, pick, trend }: {
-  label: string; icon: LucideIcon; spec: RouteSpec; demoData: T; pick: (d: T) => ReactNode; trend?: { value: string; up?: boolean };
+export function StatCard<T>({ label, icon: Icon, spec, demoData, pick, trend, vars, realOnly }: {
+  label: string; icon: LucideIcon; spec: RouteSpec; demoData: T; pick: (d: T) => ReactNode; trend?: { value: string; up?: boolean }; vars?: Record<string, string | undefined>; realOnly?: boolean;
 }) {
-  const r = useApiOrDemo<T>(spec, demoData);
+  const r = useApiOrDemo<T>(spec, demoData, vars, { fallbackToDemo: !realOnly });
   let value: ReactNode = "—";
   try { value = pick(r.data) ?? "—"; } catch { /* format inattendu */ }
   return (

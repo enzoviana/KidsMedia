@@ -139,7 +139,8 @@ export const demoAffectations: Affectation[] = [
 /** Une RSAI peut ouvrir les dossiers d'une crèche seulement si elle y est affectée, dans ses horaires et sur place. */
 export function accesRsai(a: Affectation, date: Date, pos: { lat: number; lng: number } | null): { ok: boolean; motif?: "hors_plage" | "hors_zone"; distance?: number } {
   const hm = date.toTimeString().slice(0, 5);
-  const dansHoraire = (a.horaires ?? []).some((h) => h.jour === date.getDay() && hm >= h.debut && hm <= h.fin);
+  const todayIso = ((date.getDay() + 6) % 7) + 1;
+  const dansHoraire = (a.horaires ?? []).some((h) => h.jour === todayIso && hm >= h.debut && hm <= h.fin);
   if (!dansHoraire) return { ok: false, motif: "hors_plage" };
   if (!pos) return { ok: false, motif: "hors_zone" };
   const d = distanceM(pos, a.etablissement);

@@ -23,7 +23,7 @@ export function canReadNote(role: RoleKey, visibility: string) {
 }
 export function validRating(note: number) { return Number.isInteger(note) && note >= 1 && note <= 5; }
 export function validSchedule(debut: string, fin: string, jours: number[]) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(debut) && /^([01]\d|2[0-3]):[0-5]\d$/.test(fin) && debut < fin && jours.length > 0 && jours.every((j) => Number.isInteger(j) && j >= 0 && j <= 6);
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(debut) && /^([01]\d|2[0-3]):[0-5]\d$/.test(fin) && debut < fin && jours.length > 0 && jours.every((j) => Number.isInteger(j) && j >= 1 && j <= 7);
 }
 /** Absent endpoints are deliberately simulated, never sent to an unrelated real route. */
 export async function writeSpec(spec: RouteSpec, body?: unknown, vars?: Record<string, string | undefined>) {

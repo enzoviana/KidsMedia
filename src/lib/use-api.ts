@@ -7,10 +7,11 @@ export interface ApiResult<T> {
   data: T;
   demo: boolean;
   reason?: string;
+  loading?: boolean;
 }
 
 /** vars : paramètres de chemin supplémentaires (ex. { enfantId }) — prioritaires sur ceux de l'utilisateur. */
-export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, string | undefined>, opts?: { refetchInterval?: number }) {
+export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, string | undefined>, opts?: { refetchInterval?: number; fallbackToDemo?: boolean }) {
   const q = useQuery<ApiResult<T>>({
     queryKey: ["api", spec.id, vars ?? null],
     staleTime: 60_000,
@@ -18,13 +19,15 @@ export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, 
     retry: false,
     queryFn: async () => {
       const at = new Date().toLocaleTimeString("fr-FR");
+      const s = getSession();
+      const realOnly = opts?.fallbackToDemo === false && !!s && !s.demo;
       const fail = (d: Omit<Diagnostic, "at">, reason: string): ApiResult<T> => {
         setDiag(spec.id, { ...d, at });
+        if (realOnly) return { data: [] as unknown as T, demo: false, reason };
         return { data: demo, demo: true, reason };
       };
       if (spec.path.includes(":etablissementId") && !vars?.["etablissementId"]) await ensureEtablissement();
-      const s = getSession();
-      if (!s || s.demo) return fail({ kind: "demo-session", method: spec.method, url: fullUrl(spec.path), message: "Session démo" }, "Mode démo");
+      if (!s || s.demo) return fail({ kind: "demo-session", method: spec.method, url: fullUrl(spec.path), message: s ? "Session démo" : "Session absente" }, s ? "Mode démo" : "Session absente");
       if (/\s/.test(spec.path)) return fail({ kind: "text", method: spec.method, url: spec.path, message: "Non appelable" }, "Exigence décrite en texte (pas une URL appelable) : à vérifier côté serveur");
       const p = { ...userParams(s.user), ...(vars ?? {}) };
       let missing: string | null = null;
@@ -46,5 +49,7 @@ export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, 
       }
     },
   });
-  return q.data ?? { data: demo, demo: false, reason: undefined, loading: true };
+  const sessionDemo = !!getSession()?.demo;
+  const initial = opts?.fallbackToDemo === false && !sessionDemo ? ([] as unknown as T) : demo;
+  return q.data ?? { data: initial, demo: false, reason: undefined, loading: true };
 }

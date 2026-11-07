@@ -2,15 +2,48 @@ import { ShieldAlert, MapPin, Clock, Wifi, RotateCcw, LogOut } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import type { SecurityBlock } from "@/lib/api";
 
-const textes: Record<string, { titre: string; icon: typeof MapPin; explication: string }> = {
-  hors_zone: { titre: "Vous n'êtes pas sur place", icon: MapPin, explication: "Votre position est en dehors du périmètre de sécurité de la crèche." },
-  hors_plage: { titre: "Hors de vos horaires", icon: Clock, explication: "L'accès n'est autorisé que pendant vos horaires de travail." },
-  ip_refusee: { titre: "Réseau non autorisé", icon: Wifi, explication: "Vous vous connectez depuis un réseau qui n'est pas autorisé par la crèche." },
+const textes: Record<string, { titre: string; icon: typeof MapPin; explication: string; action?: string }> = {
+  hors_zone: {
+    titre: "Vous n'êtes pas sur place",
+    icon: MapPin,
+    explication: "Votre position est en dehors du périmètre de sécurité de la crèche.",
+    action: "Rapprochez-vous de la crèche puis réessayez. Si vous êtes sur site, vérifiez que la localisation de votre téléphone est activée.",
+  },
+  hors_plage: {
+    titre: "Hors de vos horaires",
+    icon: Clock,
+    explication: "L'accès n'est autorisé que pendant les horaires d'ouverture de la crèche.",
+    action: "Consultez vos horaires dans « Mes affectations » ou contactez l'administrateur pour les modifier.",
+  },
+  ip_refusee: {
+    titre: "Réseau non autorisé",
+    icon: Wifi,
+    explication: "Vous vous connectez depuis un réseau qui n'est pas autorisé par la crèche.",
+    action: "Connectez-vous au réseau de la crèche ou demandez à l'administrateur d'ajouter votre adresse IP.",
+  },
+  appareil_inconnu: {
+    titre: "Appareil non reconnu",
+    icon: ShieldAlert,
+    explication: "Cet appareil n'a pas encore été validé pour votre compte.",
+    action: "Validez l'appareil depuis votre espace Sécurité ou utilisez un appareil de confiance.",
+  },
+  geolocalisation_requise: {
+    titre: "Géolocalisation requise",
+    icon: MapPin,
+    explication: "Votre position doit être vérifiée avant d'ouvrir un dossier.",
+    action: "Activez la localisation puis réessayez. Si le problème persiste, autorisez la localisation dans les réglages du navigateur.",
+  },
+  non_lie: {
+    titre: "Dossier non accessible",
+    icon: ShieldAlert,
+    explication: "Votre compte n'est pas rattaché à cet enfant ou à cet établissement.",
+    action: "Demandez à l'administrateur de créer la liaison ou l'affectation nécessaire.",
+  },
 };
 
 /** Écran plein qui indique clairement qu'une connexion a été refusée pour raison de sécurité. */
 export function SecurityBlockedScreen({ block, onRetry, onLogout }: { block: SecurityBlock; onRetry?: () => void; onLogout?: () => void }) {
-  const t = textes[block.motif] ?? { titre: "Accès refusé", icon: ShieldAlert, explication: block.message };
+  const t = textes[block.motif] ?? { titre: "Accès refusé", icon: ShieldAlert, explication: block.message, action: "Contactez l'administrateur si vous pensez qu'il s'agit d'une erreur." };
   return (
     <div role="alert" className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 p-4 backdrop-blur">
       <div className="w-full max-w-md rounded-2xl border-2 border-destructive/40 bg-card p-8 text-center shadow-lg">
@@ -18,8 +51,9 @@ export function SecurityBlockedScreen({ block, onRetry, onLogout }: { block: Sec
         <p className="text-xs font-semibold uppercase tracking-wider text-destructive">Connexion refusée par sécurité</p>
         <h2 className="mt-2 flex items-center justify-center gap-2 font-display text-2xl font-semibold"><t.icon className="h-5 w-5" />{t.titre}</h2>
         <p className="mt-3 text-sm">{t.explication}</p>
-        {block.distanceM != null && <p className="mt-1 text-sm text-muted-foreground">Distance mesurée : {block.distanceM} m.</p>}
+        {block.distanceM != null && <p className="mt-1 text-sm text-muted-foreground">Distance mesurée : {block.distanceM} m du centre de la crèche.</p>}
         {block.message && block.message !== t.explication && <p className="mt-1 text-sm text-muted-foreground">{block.message}</p>}
+        {t.action && <p className="mt-4 rounded-xl bg-muted/60 p-3 text-sm"><strong>Que faire ?</strong> {t.action}</p>}
         <p className="mt-4 text-xs text-muted-foreground">Cette tentative a été enregistrée et l'administrateur a été prévenu.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {onRetry && <Button onClick={onRetry}><RotateCcw className="mr-1 h-4 w-4" />Réessayer</Button>}

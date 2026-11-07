@@ -4,9 +4,11 @@ import { HeartPulse, Syringe, AlertTriangle, Pill as PillIcon, Brain, FileCheck,
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, Legend, PieChart, Pie, Cell } from "recharts";
 import { DashboardShell, type NavGroup } from "@/components/dash/shell";
 import { EnfantLink } from "@/components/dash/crud";
-import { DataPanel, StatCard, Pill, Empty, fullName, fmtDate, tip } from "@/components/dash/widgets";
+import { DataPanel, StatCard, Pill, Empty, fullName, fmtDate, tip, Panel } from "@/components/dash/widgets";
 import { specs } from "@/lib/specs";
-import { toList } from "@/lib/api";
+import { getSession, toList } from "@/lib/api";
+import { useApiOrDemo } from "@/lib/use-api";
+import { demoAffectations } from "@/lib/demo-medical";
 
 export const Route = createFileRoute("/rsai")({
   head: () => ({
@@ -62,17 +64,38 @@ const demoOblig = [
 const grav = (g?: string): "default" | "success" | "warning" | "danger" => (g === "elevee" ? "danger" : g === "moyenne" ? "warning" : "default");
 
 function Rsai() {
+  const session = getSession();
+  const isDemo = !!session?.demo;
+  const aff = useApiOrDemo<any>(specs.rsaiAffectations, demoAffectations, undefined, { fallbackToDemo: false });
+  const mesAffectations = toList(aff.data);
+  const etablissementId = mesAffectations[0]?.etablissement?._id ?? mesAffectations[0]?.etablissementId;
+  const vars: Record<string, string | undefined> = etablissementId ? { etablissementId: String(etablissementId) } : {};
+  const realOnly = !isDemo;
+
+  if (!isDemo && aff.loading) {
+    return <DashboardShell role="rsai" title="Suivi santé de l'établissement" groups={nav} actions={<ScanQrButton />}>
+      <Panel title="Chargement"><p className="py-6 text-center text-sm text-muted-foreground">Chargement de vos affectations…</p></Panel>
+    </DashboardShell>;
+  }
+  if (!isDemo && mesAffectations.length === 0) {
+    return <DashboardShell role="rsai" title="Suivi santé de l'établissement" groups={nav} actions={<ScanQrButton />}>
+      <Panel title="Aucune crèche affectée" spec={specs.rsaiAffectations} demo={false}>
+        <Empty text="Votre compte RSAI n'est rattaché à aucune crèche. L'administrateur doit vous affecter avant que les enfants, traitements, alertes et documents soient visibles. Aucune donnée de démonstration n'est affichée." />
+      </Panel>
+    </DashboardShell>;
+  }
+
   return (
     <DashboardShell role="rsai" title="Suivi santé de l'établissement" groups={nav} actions={<ScanQrButton />}>
       <div id="top" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Vaccins à jour" icon={Syringe} spec={specs.sante} demoData={demoSante} pick={(d) => `${d.vaccinsAJour} %`} trend={{ value: "+4 %" }} />
-        <StatCard label="Enfants suivis" icon={Baby} spec={specs.enfantsEtab} demoData={new Array(42).fill({})} pick={(d) => toList(d).length} />
-        <StatCard label="Traitements en cours" icon={PillIcon} spec={specs.medicStats} demoData={{ actifs: 5 }} pick={(d: any) => d.actifs ?? d.total} />
-        <StatCard label="Diagnostics IA" icon={Brain} spec={specs.diagStats} demoData={demoDiag} pick={(d: any) => d.total} />
+        <StatCard label="Vaccins à jour" icon={Syringe} spec={specs.sante} demoData={demoSante} pick={(d: any) => (d?.vaccinsAJour != null ? `${d.vaccinsAJour} %` : "—")} trend={{ value: "+4 %" }} vars={vars} realOnly={realOnly} />
+        <StatCard label="Enfants suivis" icon={Baby} spec={specs.enfantsEtab} demoData={new Array(42).fill({})} pick={(d) => toList(d).length} vars={vars} realOnly={realOnly} />
+        <StatCard label="Traitements en cours" icon={PillIcon} spec={specs.medicStats} demoData={{ actifs: 5 }} pick={(d: any) => d?.actifs ?? d?.total ?? "—"} vars={vars} realOnly={realOnly} />
+        <StatCard label="Diagnostics IA" icon={Brain} spec={specs.diagStats} demoData={demoDiag} pick={(d: any) => d?.total ?? "—"} vars={vars} realOnly={realOnly} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <DataPanel title="Consultations & alertes" icon={HeartPulse} spec={specs.sante} demoData={demoSante} className="xl:col-span-2">
+        <DataPanel title="Consultations & alertes" icon={HeartPulse} spec={specs.sante} demoData={demoSante} className="xl:col-span-2" vars={vars} realOnly={realOnly}>
           {(d) => (
             <div className="h-72">
               <ResponsiveContainer>
@@ -91,7 +114,7 @@ function Rsai() {
             </div>
           )}
         </DataPanel>
-        <DataPanel id="diagnostics" title="Diagnostics IA par gravité" icon={Brain} spec={specs.diagStats} demoData={demoDiag}>
+        <DataPanel id="diagnostics" title="Diagnostics IA par gravité" icon={Brain} spec={specs.diagStats} demoData={demoDiag} vars={vars} realOnly={realOnly}>
           {(d: any) => {
             const data = d.parGravite ?? [];
             return data.length === 0 ? <Empty /> : (
@@ -111,19 +134,19 @@ function Rsai() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <DataPanel id="alertes" title="Alertes symptômes" icon={AlertTriangle} spec={specs.alertes} demoData={demoAlertes}>
+        <DataPanel id="alertes" title="Alertes symptômes" icon={AlertTriangle} spec={specs.alertes} demoData={demoAlertes} vars={vars} realOnly={realOnly}>
           {(d) => <ul className="divide-y text-sm">{toList(d).map((a, i) => <li key={i} className="flex items-center justify-between gap-2 py-3"><div><p className="font-medium"><EnfantLink e={a.enfant} className="font-medium text-primary hover:underline" /></p><p className="text-muted-foreground">{a.symptome} · {fmtDate(a.createdAt)}</p></div><Pill tone={grav(a.gravite)}>{a.gravite}</Pill></li>)}</ul>}
         </DataPanel>
-        <DataPanel id="traitements" title="Traitements du jour" icon={PillIcon} spec={specs.medicToday} demoData={demoMedic}>
+        <DataPanel id="traitements" title="Traitements du jour" icon={PillIcon} spec={specs.medicToday} demoData={demoMedic} vars={vars} realOnly={realOnly}>
           {(d) => toList(d).length === 0 ? <Empty /> : <ul className="divide-y text-sm">{toList(d).map((m, i) => <li key={i} className="flex items-center justify-between py-3"><div><p className="font-medium">{m.nom ?? m.medicament}</p><p className="text-muted-foreground"><EnfantLink e={m.enfant} className="font-medium text-primary hover:underline" /></p></div><div className="flex items-center gap-2"><span className="font-mono text-xs">{m.heure ?? "—"}</span><Pill tone={m.administre ? "success" : "warning"}>{m.administre ? "Fait" : "À faire"}</Pill></div></li>)}</ul>}
         </DataPanel>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <DataPanel id="documents" title="Documents obligatoires" icon={FileCheck} spec={specs.docsOblig} demoData={demoOblig}>
+        <DataPanel id="documents" title="Documents obligatoires" icon={FileCheck} spec={specs.docsOblig} demoData={demoOblig} vars={vars} realOnly={realOnly}>
           {(d) => <ul className="space-y-4">{toList(d).map((o, i) => <li key={i}><div className="mb-1 flex justify-between text-sm"><span className="font-medium">{o.nom}</span><span className="text-muted-foreground">{o.taux != null ? `${o.taux} %` : o.obligatoire ? "Obligatoire" : "Facultatif"}</span></div>{o.taux != null && <div className="h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-primary" style={{ width: `${o.taux}%` }} /></div>}</li>)}</ul>}
         </DataPanel>
-        <DataPanel id="ordonnances" title="Ordonnances" icon={ClipboardList} spec={specs.ordoStats} demoData={{ total: 34, actives: 9, expirees: 25 }}>
+        <DataPanel id="ordonnances" title="Ordonnances" icon={ClipboardList} spec={specs.ordoStats} demoData={{ total: 34, actives: 9, expirees: 25 }} vars={vars} realOnly={realOnly}>
           {(d: any) => (
             <div className="grid grid-cols-3 gap-3 text-center">
               {[["Total", d.total], ["Actives", d.actives], ["Expirées", d.expirees]].map(([l, v]) => (
