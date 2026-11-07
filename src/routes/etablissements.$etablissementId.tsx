@@ -20,7 +20,7 @@ export const Route = createFileRoute("/etablissements/$etablissementId")({
   component: EtabPage,
 });
 
-const demoEtab = { nom: "Crèche Les Petits Soleils", adresse: "12 rue des Lilas, 69003 Lyon", tel: "04 72 00 00 00", email: "contact@soleils.fr", capacite: 48, agrement: "PMI-69-2021-118", actif: true };
+const demoEtab = { nom: "Crèche Les Petits Soleils", description: "Crèche associative au cœur du 11e arrondissement. Projet nature et éveil musical.", horairesOuverture: "Lundi – Vendredi : 07:30 – 18:30", photoUrl: null as string | null, adresse: "12 rue des Lilas, 69003 Lyon", tel: "04 72 00 00 00", email: "contact@soleils.fr", capacite: 48, agrement: "PMI-69-2021-118", actif: true };
 const demoStats = { enfants: 42, personnel: 14, sections: 3, tauxOccupation: 87 };
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
@@ -36,8 +36,11 @@ function EtabPage() {
         <DataPanel title="Informations" icon={Building2} spec={specs.etab} demoData={demoEtab} vars={v}>
           {(e: any) => (
             <div>
+              {e.photoUrl ? <img src={e.photoUrl} alt={`Photo de ${e.nom ?? "la crèche"}`} className="mb-3 h-40 w-full rounded-xl object-cover" /> : null}
               <p className="mb-3 font-display text-2xl font-semibold">{e.nom}</p>
+              {e.description && <p className="mb-3 whitespace-pre-wrap text-sm text-muted-foreground">{e.description}</p>}
               <Row k="Adresse" v={typeof e.adresse === "object" ? [e.adresse?.rue, e.adresse?.ville].filter(Boolean).join(", ") : e.adresse ?? "—"} />
+              <Row k="Horaires d'ouverture" v={e.horairesOuverture ?? "—"} />
               <Row k="Téléphone" v={e.tel ?? e.telephone ?? "—"} />
               <Row k="Email" v={e.email ?? "—"} />
               <Row k="Capacité" v={e.capacite ?? "—"} />

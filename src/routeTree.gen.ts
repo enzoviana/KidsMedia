@@ -20,6 +20,7 @@ import { Route as CrecheRouteImport } from './routes/creche'
 import { Route as DiagnosticsRouteImport } from './routes/diagnostics'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DocumentsObligatoiresRouteImport } from './routes/documents-obligatoires'
+import { Route as MaCrecheRouteImport } from './routes/ma-creche'
 import { Route as MedecinRouteImport } from './routes/medecin'
 import { Route as MedecinsRouteImport } from './routes/medecins'
 import { Route as MedicamentsRouteImport } from './routes/medicaments'
@@ -113,6 +114,11 @@ const DocumentsRoute = DocumentsRouteImport.update({
 const DocumentsObligatoiresRoute = DocumentsObligatoiresRouteImport.update({
   id: '/documents-obligatoires',
   path: '/documents-obligatoires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaCrecheRoute = MaCrecheRouteImport.update({
+  id: '/ma-creche',
+  path: '/ma-creche',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MedecinRoute = MedecinRouteImport.update({
@@ -324,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/diagnostics': typeof DiagnosticsRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/diagnostics': typeof DiagnosticsRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/diagnostics': typeof DiagnosticsRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
@@ -483,6 +492,7 @@ export interface FileRouteTypes {
     | '/diagnostics'
     | '/documents'
     | '/documents-obligatoires'
+    | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/diagnostics'
     | '/documents'
     | '/documents-obligatoires'
+    | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/diagnostics'
     | '/documents'
     | '/documents-obligatoires'
+    | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
@@ -640,6 +652,7 @@ export interface RootRouteChildren {
   DiagnosticsRoute: typeof DiagnosticsRoute
   DocumentsRoute: typeof DocumentsRoute
   DocumentsObligatoiresRoute: typeof DocumentsObligatoiresRoute
+  MaCrecheRoute: typeof MaCrecheRoute
   MedecinRoute: typeof MedecinRoute
   MedecinsRoute: typeof MedecinsRoute
   MedicamentsRoute: typeof MedicamentsRoute
@@ -758,6 +771,13 @@ declare module '@tanstack/react-router' {
       path: '/documents-obligatoires'
       fullPath: '/documents-obligatoires'
       preLoaderRoute: typeof DocumentsObligatoiresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ma-creche': {
+      id: '/ma-creche'
+      path: '/ma-creche'
+      fullPath: '/ma-creche'
+      preLoaderRoute: typeof MaCrecheRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/medecin': {
@@ -1048,6 +1068,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiagnosticsRoute: DiagnosticsRoute,
   DocumentsRoute: DocumentsRoute,
   DocumentsObligatoiresRoute: DocumentsObligatoiresRoute,
+  MaCrecheRoute: MaCrecheRoute,
   MedecinRoute: MedecinRoute,
   MedecinsRoute: MedecinsRoute,
   MedicamentsRoute: MedicamentsRoute,

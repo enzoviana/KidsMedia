@@ -26,7 +26,7 @@ export const Route = createFileRoute("/documents")({
 const demo: any[] = [{type:"Certificat de vaccination",statut:"en_attente",enfant:{prenom:"Noah",nom:"Bernard"},createdAt:"2026-10-02"},{type:"Attestation d'assurance",statut:"valide",enfant:{prenom:"Jade",nom:"Petit"},createdAt:"2026-09-20"},{type:"PAI",statut:"rejete",enfant:{prenom:"Léa",nom:"Martin"},createdAt:"2026-09-28"}];
 const cols: Col[] = [{label:"Document",render:(r)=><span className="font-medium">{r.type??r.nom}</span>},{label:"Enfant",render:(r)=><EnfantLink e={r.enfant} />},{label:"Date",render:(r)=>fmtDate(r.createdAt)},{label:"Statut",render:(r)=><Pill tone={r.statut==="valide"?"success":r.statut==="rejete"?"danger":"warning"}>{String(r.statut??"").replace("_"," ")}</Pill>}];
 
-const crud: Crud = {"entity": "un document", "base": "/documents", "noCreate": true, "fields": [{"name": "type", "label": "Type", "type": "text", "required": true}, {"name": "statut", "label": "Statut", "type": "select", "options": ["en_attente", "valide", "rejete"]}, {"name": "dateValidite", "label": "Valide jusqu'au", "type": "date"}]};
+const crud: Crud = {"entity": "un document", "base": "/documents", "view": "document", "noCreate": true, "fields": [{"name": "type", "label": "Type", "type": "text", "required": true}, {"name": "statut", "label": "Statut", "type": "select", "options": ["en_attente", "valide", "rejete"]}, {"name": "dateValidite", "label": "Valide jusqu'au", "type": "date"}]};
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;

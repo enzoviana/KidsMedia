@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardCheck } from "lucide-react";
 import { ListPage, type Col } from "@/components/dash/list-page";
-import { EnfantLink, type Crud } from "@/components/dash/crud";
-import { Pill, fullName, fmtDate } from "@/components/dash/widgets";
+import { type Crud } from "@/components/dash/crud";
+import { Pill } from "@/components/dash/widgets";
 import { specs } from "@/lib/specs";
+import { getSession, roleToKey } from "@/lib/api";
 
 export const Route = createFileRoute("/documents-obligatoires")({
   head: () => ({
@@ -19,12 +20,42 @@ export const Route = createFileRoute("/documents-obligatoires")({
   component: Page,
 });
 
-const demo: any[] = [{nom:"Carnet de vaccination",description:"Vaccins obligatoires à jour",obligatoire:true,actif:true},{nom:"Attestation d'assurance",description:"Responsabilité civile",obligatoire:true,actif:true},{nom:"Autorisation de sortie",description:"Sorties extérieures",obligatoire:false,actif:true}];
-const cols: Col[] = [{label:"Document",render:(r)=><span className="font-medium">{r.nom}</span>},{label:"Description",render:(r)=>r.description??"—"},{label:"Obligatoire",render:(r)=><Pill tone={r.obligatoire?"warning":"default"}>{r.obligatoire?"Oui":"Facultatif"}</Pill>}];
-
-const crud: Crud = {"entity": "un document obligatoire", "base": "/documents-obligatoires", "extra": {"etablissementId": ":etablissementId"}, "fields": [{"name": "nom", "label": "Nom du document", "type": "text", "required": true}, {"name": "description", "label": "Description", "type": "textarea"}, {"name": "obligatoireInscription", "label": "Obligatoire pour l'inscription", "type": "checkbox"}, {"name": "validiteMois", "label": "Validité (mois)", "type": "number"}]};
+const demo: any[] = [
+  { _id: "doc-oblig-1", type: "Carnet de vaccination", description: "Vaccins obligatoires à jour", validiteMois: 12 },
+  { _id: "doc-oblig-2", type: "Attestation d'assurance", description: "Responsabilité civile", validiteMois: 12 },
+  { _id: "doc-oblig-3", type: "Autorisation de sortie", description: "Sorties extérieures", validiteMois: null },
+];
+const cols: Col[] = [
+  { label: "Document", render: (r) => <span className="font-medium">{r.type ?? r.nom ?? "—"}</span> },
+  { label: "Description", render: (r) => r.description ?? "—" },
+  { label: "Validité", render: (r) => (r.validiteMois ? <Pill tone="warning">{r.validiteMois} mois</Pill> : "—") },
+];
 
 function Page() {
-  void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Documents obligatoires" spec={specs.docsOblig} demo={demo} cols={cols} icon={ClipboardCheck} />;
+  const role = roleToKey(getSession()?.user.role);
+  const canManage = role === "creche" || role === "admin" || role === "dev";
+  const crud: Crud = {
+    entity: "un document obligatoire",
+    base: "/documents-obligatoires",
+    extra: { etablissementId: ":etablissementId" },
+    noCreate: !canManage,
+    noEdit: !canManage,
+    noDelete: !canManage,
+    fields: [
+      { name: "type", label: "Document obligatoire", type: "text", required: true },
+      { name: "description", label: "Description", type: "textarea" },
+      { name: "validiteMois", label: "Validité (mois)", type: "number" },
+    ],
+  };
+  return (
+    <ListPage
+      crud={crud}
+      title="Documents obligatoires"
+      spec={specs.docsOblig}
+      demo={demo}
+      cols={cols}
+      icon={ClipboardCheck}
+      before={<p className="text-sm text-muted-foreground">Ces documents sont exigés pour chaque enfant de la crèche. Les familles les déposent depuis « Documents ».</p>}
+    />
+  );
 }

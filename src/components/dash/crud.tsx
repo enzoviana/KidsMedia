@@ -34,7 +34,7 @@ export interface Crud {
   extra?: Record<string, string>;
   /** Callback après création (ex. afficher le statut d'envoi de l'e-mail). */
   afterCreate?: (res: any, values: Record<string, any>) => void;
-  view?: "enfant" | "etablissement";
+  view?: "enfant" | "etablissement" | "document";
   noCreate?: boolean;
   noEdit?: boolean;
   noDelete?: boolean;

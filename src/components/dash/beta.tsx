@@ -32,7 +32,7 @@ export function useSessionUser() {
 
 export function UserAvatar({ user, className = "h-9 w-9" }: { user: ApiUser | null; className?: string }) {
   const url = (user?.avatarUrl as string | undefined) ?? undefined;
-  const letter = (user?.prenom ?? user?.email ?? "U")[0]?.toUpperCase();
+  const letter = (user?.prenom || user?.nom || user?.email || "U")[0]?.toUpperCase();
   return url
     ? <img src={url} alt="Photo de profil" className={`${className} shrink-0 rounded-full object-cover`} />
     : <span className={`${className} grid shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-foreground`}>{letter}</span>;

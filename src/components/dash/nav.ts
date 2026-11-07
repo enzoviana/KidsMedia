@@ -21,6 +21,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
   creche: [
     { label: "Général", items: [
       { label: "Tableau de bord", icon: LayoutDashboard, to: "/creche" },
+      { label: "Ma crèche", icon: Building2, to: "/ma-creche" },
       { label: "Enfants", icon: Baby, to: "/enfants" },
       { label: "Sections", icon: LayoutGrid, to: "/sections" },
       { label: "Personnel", icon: Users, to: "/personnel" },
@@ -30,6 +31,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
       { label: "Médicaments", icon: Pill, to: "/medicaments" },
       { label: "Signaler un symptôme (IA)", icon: Sparkles, to: "/analyse-ia" },
       { label: "Documents", icon: FileText, to: "/documents" },
+      { label: "Documents obligatoires", icon: ClipboardCheck, to: "/documents-obligatoires" },
     ]},
     { label: "Annuaires", items: [
       { label: "Médecins", icon: Stethoscope, to: "/medecins" },

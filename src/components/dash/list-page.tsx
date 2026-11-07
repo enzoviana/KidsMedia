@@ -104,6 +104,10 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
           <Button size="icon" variant="ghost" title="Voir le dossier" aria-label={`Voir le dossier de ${[row.prenom, row.nom].filter(Boolean).join(" ")}`} asChild><Link to="/enfants/$enfantId" params={{ enfantId: enfantIdOf(row) ?? "" }}><Eye className="h-4 w-4" /></Link></Button>
         ) : crud.view === "etablissement" && rid(row) ? (
           <Button size="icon" variant="ghost" title="Voir" asChild><Link to="/etablissements/$etablissementId" params={{ etablissementId: rid(row) }}><Eye className="h-4 w-4" /></Link></Button>
+        ) : crud.view === "document" && (row.url || row.lien) ? (
+          <Button size="icon" variant="ghost" title="Ouvrir le document" aria-label={`Ouvrir ${row.nom ?? row.type ?? "le document"}`} asChild>
+            <a href={row.url ?? row.lien} target="_blank" rel="noopener noreferrer"><Eye className="h-4 w-4" /></a>
+          </Button>
         ) : (
           <Button size="icon" variant="ghost" title="Voir" onClick={() => setViewing(row)}><Eye className="h-4 w-4" /></Button>
         )}

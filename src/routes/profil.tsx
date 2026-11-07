@@ -34,10 +34,11 @@ const demo = { prenom: "Inès", nom: "Moreau", email: "ines@soleils.fr", tel: "0
 
 function PhotoPanel() {
   const user = useSessionUser();
+  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   async function onFile(f: File | undefined) {
     if (!f) return;
-    if (!f.type.startsWith("image/")) { toast.error("Choisissez une image."); return; }
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast.error("Format accepté : JPG, PNG ou WebP."); return; }
     if (f.size > 2 * 1024 * 1024) { toast.error("Image trop lourde (2 Mo maximum)."); return; }
     setBusy(true);
     try {
@@ -46,17 +47,27 @@ function PhotoPanel() {
       if (specs.avatar.status === "ok" && !getSession()?.demo) url = (await send<{ avatarUrl: string }>("POST", specs.avatar.path, fd)).data.avatarUrl;
       else url = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       patchSessionUser({ avatarUrl: url });
+      qc.invalidateQueries({ queryKey: ["api", specs.profile.id] });
       toast.success("Photo de profil mise à jour");
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { toast.error("Photo refusée", { description: (e as Error).message }); } finally { setBusy(false); }
+  }
+  async function removePhoto() {
+    setBusy(true);
+    try {
+      if (!getSession()?.demo) await send("DELETE", specs.avatarDelete.path);
+      patchSessionUser({ avatarUrl: undefined });
+      qc.invalidateQueries({ queryKey: ["api", specs.profile.id] });
+      toast.success("Photo de profil retirée");
+    } catch (e) { toast.error("Retrait impossible", { description: (e as Error).message }); } finally { setBusy(false); }
   }
   return (
-    <Panel title="Photo de profil" icon={Camera} actions={<DemoBadge spec={specs.avatar} reason="Route manquante : photo gardée sur cet appareil" />}>
+    <Panel title="Photo de profil" icon={Camera}>
       <div className="flex items-center gap-4">
         <UserAvatar user={user} className="h-20 w-20 text-2xl" />
         <div className="flex flex-col gap-2">
-          <Button asChild variant="outline" disabled={busy}><label className="cursor-pointer">Changer la photo<input type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} /></label></Button>
-          {user?.avatarUrl ? <Button variant="ghost" size="sm" onClick={() => patchSessionUser({ avatarUrl: undefined })}>Retirer</Button> : null}
-          <p className="text-xs text-muted-foreground">JPG ou PNG, 2 Mo maximum.</p>
+          <Button asChild variant="outline" disabled={busy}><label className="cursor-pointer">Changer la photo<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} /></label></Button>
+          {user?.avatarUrl ? <Button variant="ghost" size="sm" onClick={removePhoto} disabled={busy}>Retirer</Button> : null}
+          <p className="text-xs text-muted-foreground">JPG, PNG ou WebP — 2 Mo maximum. Disponible pour tous les comptes.</p>
         </div>
       </div>
     </Panel>
@@ -72,8 +83,10 @@ function InfoForm({ u }: { u: any }) {
     const body = { prenom: String(f.get("prenom") ?? ""), nom: String(f.get("nom") ?? ""), telephone: String(f.get("telephone") ?? "") };
     setBusy(true);
     try {
-      const res = await send("PUT", specs.profileUpdate.path, body);
-      patchSessionUser({ prenom: body.prenom, nom: body.nom } as any);
+      const res = await send<any>("PUT", specs.profileUpdate.path, body);
+      const updated = res.data && typeof res.data === "object" && !Array.isArray(res.data) ? res.data : body;
+      patchSessionUser({ prenom: updated.prenom ?? body.prenom, nom: updated.nom ?? body.nom, telephone: updated.telephone ?? body.telephone } as any);
+      qc.setQueryData(["api", specs.profile.id, null], (old: any) => old ? { ...old, data: { ...(old.data ?? {}), ...updated } } : old);
       if (!res.demo) qc.invalidateQueries({ queryKey: ["api", specs.profile.id] });
       toast.success(res.demo ? "Coordonnées mises à jour (démo)" : "Coordonnées enregistrées");
     } catch (err) { toast.error((err as Error).message); } finally { setBusy(false); }
@@ -94,6 +107,8 @@ function InfoForm({ u }: { u: any }) {
 
 function Profil() {
   const [busy, setBusy] = useState(false);
+  const sessionUser = getSession()?.user;
+  const profileFallback = { ...demo, ...(sessionUser as any) };
   async function changePwd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -110,8 +125,11 @@ function Profil() {
       <div className="grid gap-4 lg:grid-cols-2">
         <PhotoPanel />
         <Panel title="Sécurité de connexion" icon={ShieldCheck}><SecuritySettings /></Panel>
-        <DataPanel title="Mes informations" icon={UserRound} spec={specs.profile} demoData={demo}>
-          {(u: any) => <InfoForm u={u} />}
+        <DataPanel title="Mes informations" icon={UserRound} spec={specs.profile} demoData={profileFallback}>
+          {(u: any) => {
+            const merged = { ...profileFallback, ...(u && !Array.isArray(u) ? u : {}) };
+            return <InfoForm key={`${merged._id ?? merged.id ?? "me"}-${merged.prenom ?? ""}-${merged.nom ?? ""}`} u={merged} />;
+          }}
         </DataPanel>
         <Panel title="Changer le mot de passe" icon={KeyRound}>
           <form onSubmit={changePwd} className="space-y-3">
