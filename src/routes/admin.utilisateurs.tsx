@@ -62,13 +62,33 @@ const cols: Col[] = [
 function Page() {
   const dev = roleToKey(getSession()?.user.role) === "dev";
   const roles = ["creche", "rsai", "medecin", "parent", "admin", ...(dev ? ["developpeur"] : [])];
-  const crud: Crud = { entity: "un utilisateur", base: "/users", fields: [
+  const crud: Crud = { entity: "un utilisateur", base: "/users",
+    afterCreate: (res: any) => {
+      if (res?.demo) return;
+      const data = res?.data ?? {};
+      if (data.emailEnvoye === false) {
+        toast.warning("Compte créé, mais l'e-mail n'a pas été envoyé", {
+          description: data.motDePasseTemporaire ? `Mot de passe temporaire : ${data.motDePasseTemporaire}` : data.emailErreur ?? "Vérifiez la configuration e-mail du serveur.",
+          duration: 15_000,
+        });
+      } else if (data.emailSimule) {
+        toast.warning("Compte créé — e-mail simulé", {
+          description: data.motDePasseTemporaire
+            ? `Aucun fournisseur e-mail configuré. Mot de passe temporaire : ${data.motDePasseTemporaire}`
+            : "Aucun fournisseur e-mail n'est configuré : le mot de passe n'a pas été expédié.",
+          duration: 15_000,
+        });
+      } else if (data.email) {
+        toast.success(`Identifiants envoyés à ${data.email}`);
+      }
+    },
+    fields: [
     { name: "prenom", label: "Prénom", type: "text", required: true },
     { name: "nom", label: "Nom", type: "text", required: true },
     { name: "email", label: "E-mail", type: "email", required: true },
     { name: "role", label: "Rôle", type: "select", required: true, options: roles },
     { name: "telephone", label: "Téléphone (SMS)", type: "tel" },
-    { name: "etablissementId", label: "Crèche (comptes crèche)", lookup: "etablissement" },
+    { name: "etablissementId", label: "Crèche / établissement (requis pour un compte crèche)", lookup: "etablissement", quickCreate: true },
   ] } as Crud;
   return <ListPage crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog} />;
 }

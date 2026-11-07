@@ -19,6 +19,8 @@ export interface Field {
   options?: string[];
   /** Sélecteur par nom (envoie l'identifiant) */
   lookup?: LookupKind;
+  /** Affiche un bouton « Ajouter » pour créer l'élément référencé (ex. une crèche). */
+  quickCreate?: boolean;
   required?: boolean;
 }
 
@@ -30,6 +32,8 @@ export interface Crud {
   fields: Field[];
   /** corps additionnel à la création (ex. { etablissement: ":etablissementId" }) */
   extra?: Record<string, string>;
+  /** Callback après création (ex. afficher le statut d'envoi de l'e-mail). */
+  afterCreate?: (res: any, values: Record<string, any>) => void;
   view?: "enfant" | "etablissement";
   noCreate?: boolean;
   noEdit?: boolean;
@@ -83,7 +87,7 @@ export function FormDialog({ open, onOpenChange, title, description, fields, ini
                   <>
                     <Label htmlFor={f.name}>{f.label}{f.required && " *"}</Label>
                     {f.lookup ? (
-                      <LookupField kind={f.lookup} id={f.name} name={f.name} required={f.required} defaultValue={dv} />
+                      <LookupField kind={f.lookup} id={f.name} name={f.name} required={f.required} quickCreate={f.quickCreate} defaultValue={dv} />
                     ) : f.type === "address" ? (
                       <AddressField id={f.name} required={f.required} defaultValue={dv} />
                     ) : f.type === "select" ? (

@@ -77,6 +77,7 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
       const res = await send<any>("POST", crud.base, { ...extra, ...v });
       setLocal([{ _id: `local-${Date.now()}`, ...v, ...(res.data && typeof res.data === "object" ? res.data : {}) }, ...base]);
       done(`${cap(crud.entity)} ajouté(e)`, res.demo);
+      crud.afterCreate?.(res, v);
     } catch (e) { fail(e); }
   }
   async function update(v: Record<string, any>) {

@@ -91,12 +91,12 @@ export function analyseDemo(symptomes: string[], temperature?: number, ageMois?:
 
 export interface Plage { role: string; jours: number[]; debut: string; fin: string; actif: boolean }
 export const demoPlages: Plage[] = [
-  { role: "creche", jours: [1, 2, 3, 4, 5], debut: "07:00", fin: "19:00", actif: true },
-  { role: "rsai", jours: [1, 2, 3, 4, 5], debut: "08:00", fin: "18:00", actif: true },
+  { role: "creche", jours: [0, 1, 2, 3, 4, 5, 6], debut: "08:00", fin: "20:00", actif: true },
+  { role: "rsai", jours: [0, 1, 2, 3, 4, 5, 6], debut: "08:00", fin: "20:00", actif: true },
   { role: "medecin", jours: [1, 2, 3, 4, 5, 6], debut: "07:00", fin: "21:00", actif: false },
 ];
 export const demoGeofences = [
-  { etablissementId: "demo-soleil", nom: "Les Petits Soleils", lat: 48.8566, lng: 2.3522, rayonM: 150, roles: ["rsai"] },
+  { etablissementId: "demo-soleil", nom: "Les Petits Soleils", lat: 48.8566, lng: 2.3522, rayonM: 50, roles: ["rsai"] },
 ];
 
 /** Vrai si l'heure (HH:mm) et le jour (0=dim) tombent dans la plage. */

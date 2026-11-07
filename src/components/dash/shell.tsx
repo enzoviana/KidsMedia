@@ -118,7 +118,11 @@ export function DashboardShell({ role: forced, title, actions, children }: { rol
     const s = getSession();
     if (!s) { navigate({ to: "/connexion", replace: true }); return; }
     const own = roleToKey(s.user.role);
-    if (forced && !s.demo && own !== forced) { navigate({ to: own ? roleHome[own] : "/connexion", replace: true }); return; }
+    // Le rôle réel de la session doit correspondre à l'espace demandé. Seul le compte
+    // développeur (suprême) peut ouvrir les pages d'administration. Le mode démo est
+    // soumis à la même règle pour ne pas laisser croire à un accès inter-espaces.
+    const autorise = own === forced || (own === "dev" && forced === "admin");
+    if (forced && !autorise) { navigate({ to: own ? roleHome[own] : "/connexion", replace: true }); return; }
     setS(s);
   }, [forced, navigate]);
 
@@ -142,10 +146,10 @@ export function DashboardShell({ role: forced, title, actions, children }: { rol
                 <Search className="h-4 w-4" /> <span className="flex-1">Rechercher</span><kbd className="text-xs">⌘ K</kbd>
               </div>
               <div className="ml-auto flex items-center gap-2">
-                <InstallQrButton className="hidden md:inline-flex" />
+                <InstallQrButton className="hidden lg:inline-flex" />
                 <TicketButton />
                 <NotifBell />
-                <div className="hidden items-center gap-3 border-l pl-3 sm:flex">
+                <div className="hidden items-center gap-3 border-l pl-3 lg:flex">
                   <UserAvatar user={liveUser ?? session.user} />
                   <div className="text-sm leading-tight">
                     <p className="font-medium">{name}</p>

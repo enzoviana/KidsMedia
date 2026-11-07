@@ -237,7 +237,7 @@ function isMissingRoute(err: unknown) {
  */
 export function defaultMethod(p: PendingLogin): "totp" | "passkey" | MfaChannel {
   if (p.methodes?.passkey) return "passkey";
-  if (p.methodes?.email !== false) return "email";
+  if (p.methodes?.email === true) return "email";
   if (p.methodes?.totp) return "totp";
   return "sms";
 }

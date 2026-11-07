@@ -6,8 +6,8 @@ import {
   Activity, ArrowRight, Baby, Bell, Building2, ChevronRight, ClipboardList, Eye, EyeOff, FileText, HeartPulse, HelpCircle, Home, Info, KeyRound, Lock,
   LogOut, Mail, Monitor, Moon, Phone, Pill, ShieldCheck, Sparkles, Star, Stethoscope, Sun, UserCircle, UserPlus, AlertTriangle, Users, Camera,
 } from "lucide-react";
-import { getSession, loginStart, logout, mfaSend, roleToKey, setSession, type PendingLogin, type Session } from "@/lib/api";
-import { MfaSwitcher, mfaHint, mfaNeedsSend, useMfa } from "@/components/auth/mfa";
+import { defaultMethod, getSession, loginStart, logout, mfaSend, roleToKey, setSession, type PendingLogin, type Session } from "@/lib/api";
+import { MfaSwitcher, mfaHint, useMfa } from "@/components/auth/mfa";
 import { SecuritySettings } from "@/components/auth/security-settings";
 import { send } from "@/lib/mutate";
 import { specs } from "@/lib/specs";
@@ -125,7 +125,9 @@ function Login({ onDone, to }: { onDone: (s: Session) => void; to: (p?: string) 
         if (!toMobileRole(roleToKey(p.user.role))) { setSession(null); throw new Error("Ce compte (admin ou développeur) n'a pas d'espace dans l'application mobile."); }
         if (p.session) { onDone(p.session); return; }
         mfa.reset();
-        setPending(mfaNeedsSend(p) ? await mfaSend(p, p.methodes && !p.methodes.sms ? "email" : "sms") : p);
+        // Envoie le code sur le canal réellement proposé par défaut (e-mail gratuit, SMS en dernier recours).
+        const method = defaultMethod(p);
+        setPending(method === "email" || method === "sms" ? await mfaSend(p, method) : p);
       } else if (mfa.methode === "passkey") onDone(await mfa.passkey());
       else onDone(await mfa.verify(code));
     } catch (x) { setErr((x as Error).message); } finally { setBusy(false); }

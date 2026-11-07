@@ -191,7 +191,7 @@ export function CrecheHome({ open }: { open: (id: string) => void }) {
   const ok = list.filter((e) => !e.statut || e.statut === "sain").length;
   return (
     <div className="space-y-2.5 px-4 pt-4">
-      <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         <Kpi icon={Users} tone="blue" n={list.length} l="Présents" /><Kpi icon={Smile} tone="green" n={ok} l="En forme" /><Kpi icon={Activity} tone="pink" n={sick} l="Symptômes" />
       </div>
       <ScanBtn onClick={() => setScan(true)} />

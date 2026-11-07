@@ -1,7 +1,7 @@
 import { SecurityBlockedScreen } from "./security-blocked";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Syringe, ShieldCheck, Plus, Eye, MapPin, Clock, Lock, FileLock2, Sparkles } from "lucide-react";
+import { Syringe, ShieldCheck, Plus, Eye, MapPin, Clock, Lock, FileLock2, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Panel, Pill, Empty, fullName, fmtDate } from "./widgets";
 import { FormDialog } from "./crud";
@@ -11,7 +11,7 @@ import { specs } from "@/lib/specs";
 import { send } from "@/lib/mutate";
 import { toList, getSession, roleToKey } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
-import { vaccinsObligatoires, demoVaccins, consentTypes, demoConsentements, demoPlages, demoGeofences, dansPlage, distanceM, deviceName } from "@/lib/demo-medical";
+import { vaccinsObligatoires, demoVaccins, consentTypes, demoConsentements, demoPlages, dansPlage, deviceName } from "@/lib/demo-medical";
 
 /* ---------------- Carnet vaccinal ---------------- */
 export function VaccinPanel({ enfantId }: { enfantId: string }) {
@@ -152,30 +152,55 @@ export function AccessGuard({ enfantId, children }: { enfantId: string; children
   const concerne = role === "creche" || role === "rsai";
   const [etat, setEtat] = useState<Etat>(null);
   const [simHors, setSimHors] = useState<"none" | "plage" | "zone">("none");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     if (!concerne) { setEtat({ ok: true }); return; }
     let cancel = false;
-    (async () => {
+
+    // Mode démo : simulation locale, sans appel serveur.
+    if (s?.demo) {
       const plage = demoPlages.find((p) => p.role === role);
-      const horsPlage = simHors === "plage" || (!s?.demo && plage ? !dansPlage(plage, new Date()) : false);
-      if (horsPlage) { if (!cancel) setEtat({ ok: false, motif: "hors_plage", detail: `Plage autorisée : ${plage?.debut} – ${plage?.fin}, du lundi au vendredi.` }); return; }
-      if (role === "rsai") {
-        if (simHors === "zone") { setEtat({ ok: false, motif: "hors_zone", detail: "Vous êtes à 2,4 km de la crèche (rayon autorisé : 150 m)." }); return; }
-        if (!s?.demo && "geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const g = demoGeofences[0]!;
-            const d = distanceM({ lat: pos.coords.latitude, lng: pos.coords.longitude }, g);
-            if (!cancel) setEtat(d <= g.rayonM ? { ok: true } : { ok: false, motif: "hors_zone", detail: `Vous êtes à ${Math.round(d)} m de la crèche (rayon autorisé : ${g.rayonM} m).` });
-            void send("POST", specs.accesCheck.path, { enfantId, lat: pos.coords.latitude, lng: pos.coords.longitude, device: deviceName() });
-          }, () => !cancel && setEtat({ ok: false, motif: "hors_zone", detail: "Position refusée : l'accès RSAI exige d'être sur place." }));
-          return;
-        }
+      const horsPlage = simHors === "plage" || (plage ? !dansPlage(plage, new Date()) : false);
+      if (horsPlage) { setEtat({ ok: false, motif: "hors_plage", detail: `Plage autorisée : ${plage?.debut} – ${plage?.fin}.` }); return; }
+      if (role === "rsai" && simHors === "zone") { setEtat({ ok: false, motif: "hors_zone", detail: "Vous êtes à 2,4 km de la crèche (rayon autorisé : 50 m)." }); return; }
+      setEtat({ ok: true });
+      return;
+    }
+
+    async function check(lat?: number, lng?: number) {
+      try {
+        const r = await send<{ autorise?: boolean; motif?: string; distanceM?: number; rayonMetres?: number }>("POST", specs.accesCheck.path, { enfantId, lat, lng, device: deviceName() });
+        if (cancel) return;
+        const d = r.data ?? {};
+        if (d.autorise) { setEtat({ ok: true }); return; }
+        const detail = d.motif === "hors_plage"
+          ? "Accès en dehors des horaires autorisés de la crèche."
+          : d.distanceM != null
+            ? `Vous êtes à ${Math.round(d.distanceM)} m de la crèche (rayon autorisé : ${d.rayonMetres ?? "?"} m).`
+            : "Accès hors du périmètre de la crèche.";
+        setEtat({ ok: false, motif: d.motif === "hors_plage" ? "hors_plage" : "hors_zone", detail });
+      } catch (e) {
+        if (!cancel) setEtat({ ok: false, motif: "hors_zone", detail: (e as Error).message });
       }
-      if (!cancel) setEtat({ ok: true });
-    })();
+    }
+
+    if (role === "rsai") {
+      if (!("geolocation" in navigator)) {
+        setEtat({ ok: false, motif: "hors_zone", detail: "Géolocalisation indisponible : l'accès RSAI exige d'être sur place." });
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { void check(pos.coords.latitude, pos.coords.longitude); },
+        () => { if (!cancel) setEtat({ ok: false, motif: "hors_zone", detail: "Position refusée : l'accès RSAI exige d'être sur place." }); },
+        { timeout: 10_000 },
+      );
+    } else {
+      // Crèche : le serveur vérifie les horaires (et la zone si une position est fournie).
+      void check();
+    }
     return () => { cancel = true; };
-  }, [concerne, role, simHors, enfantId, s?.demo]);
+  }, [concerne, role, simHors, enfantId, s?.demo, retry]);
 
   const sim = concerne && s?.demo && (
     <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-dashed p-3 text-xs">
@@ -186,11 +211,14 @@ export function AccessGuard({ enfantId, children }: { enfantId: string; children
     </div>
   );
 
+  if (concerne && etat === null) {
+    return <div className="flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Vérification de l'accès…</div>;
+  }
   if (etat && !etat.ok) {
     return (
       <>
         <div className="relative z-[101]">{sim}</div>
-        <SecurityBlockedScreen block={{ motif: etat.motif ?? "securite", message: etat.detail ?? "" }} onRetry={() => setSimHors("none")} />
+        <SecurityBlockedScreen block={{ motif: etat.motif ?? "securite", message: etat.detail ?? "" }} onRetry={() => { setSimHors("none"); setRetry((x) => x + 1); }} />
       </>
     );
   }

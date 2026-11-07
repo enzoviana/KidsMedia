@@ -44,7 +44,7 @@ export function TicketButton() {
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-1">
-        <LifeBuoy className="h-4 w-4" /><span className="hidden md:inline">Signaler un problème</span>
+        <LifeBuoy className="h-4 w-4" /><span className="hidden lg:inline">Signaler un problème</span>
         <span className="rounded bg-warning/30 px-1 text-[10px] font-bold">BÊTA</span>
       </Button>
       <FormDialog open={open} onOpenChange={setOpen} title="Signaler un problème au développeur"

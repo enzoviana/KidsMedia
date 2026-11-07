@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { getSession, roleToKey, toList } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
 import { specs } from "@/lib/specs";
+import { send } from "@/lib/mutate";
 import { demoEnfants } from "@/lib/demo-enfants";
 import { etabChoices, rsaChoices } from "@/lib/coordination";
 
@@ -35,17 +39,58 @@ export function useLookupOptions(kind: LookupKind): LookupOption[] {
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Champ texte filtrable : on tape un nom, on choisit, l'identifiant est envoyé dans un champ caché. */
-export function LookupField({ kind, name, id, required, defaultValue, placeholder }: {
-  kind: LookupKind; name: string; id?: string; required?: boolean | undefined; defaultValue?: string | undefined; placeholder?: string | undefined;
+export function LookupField({ kind, name, id, required, defaultValue, placeholder, quickCreate }: {
+  kind: LookupKind; name: string; id?: string; required?: boolean | undefined; defaultValue?: string | undefined; placeholder?: string | undefined; quickCreate?: boolean | undefined;
 }) {
-  const options = useLookupOptions(kind);
+  const baseOptions = useLookupOptions(kind);
+  const qc = useQueryClient();
+  const [extraOptions, setExtraOptions] = useState<LookupOption[]>([]);
   const [value, setValue] = useState(defaultValue ?? "");
   const [query, setQuery] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
+  const [newBusy, setNewBusy] = useState(false);
+  const [newEtab, setNewEtab] = useState({ nom: "", adresse: "", codePostal: "", ville: "", capacite: "" });
+  const options = useMemo(() => {
+    const known = new Set(extraOptions.map((o) => o.id));
+    return [...extraOptions, ...baseOptions.filter((o) => !known.has(o.id))];
+  }, [baseOptions, extraOptions]);
   const selected = options.find((o) => o.id === value);
   const text = query ?? selected?.label ?? "";
   const list = options.filter((o) => !query || norm(`${o.label} ${o.hint ?? ""}`).includes(norm(query))).slice(0, 50);
   const ph = placeholder ?? { enfant: "Tapez le nom de l'enfant…", etablissement: "Tapez le nom de la crèche…", rsai: "Tapez le nom de la RSAI…", medecin: "Tapez le nom du médecin…", user: "Tapez le nom du destinataire…" }[kind];
+
+  async function createEtablissement() {
+    const nom = newEtab.nom.trim();
+    if (!nom) {
+      toast.error("Le nom de la crèche est obligatoire.");
+      return;
+    }
+    setNewBusy(true);
+    try {
+      const res = await send<any>("POST", specs.etabs.path, {
+        nom,
+        adresse: newEtab.adresse.trim() || undefined,
+        codePostal: newEtab.codePostal.trim() || undefined,
+        ville: newEtab.ville.trim() || undefined,
+        capacite: newEtab.capacite ? Number(newEtab.capacite) : undefined,
+      });
+      const data = res.data && typeof res.data === "object" ? res.data : {};
+      const newId = String(data.id ?? data._id ?? `local-etab-${Date.now()}`);
+      const option: LookupOption = { id: newId, label: nom, hint: newEtab.ville.trim() || undefined };
+      setExtraOptions((prev) => [option, ...prev.filter((o) => o.id !== newId)]);
+      setValue(newId);
+      setQuery(null);
+      setNewOpen(false);
+      setNewEtab({ nom: "", adresse: "", codePostal: "", ville: "", capacite: "" });
+      qc.invalidateQueries({ queryKey: ["api", specs.etabs.id] });
+      toast.success(res.demo ? "Crèche ajoutée (démo)" : "Crèche ajoutée et sélectionnée");
+    } catch (err) {
+      toast.error("Création de la crèche impossible", { description: (err as Error).message });
+    } finally {
+      setNewBusy(false);
+    }
+  }
 
   return (
     <div className="relative">
@@ -71,6 +116,32 @@ export function LookupField({ kind, name, id, required, defaultValue, placeholde
             </li>
           ))}
         </ul>
+      )}
+      {quickCreate && kind === "etablissement" && (
+        <div className="mt-2" onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}>
+          {!newOpen ? (
+            <Button type="button" size="sm" variant="outline" onClick={() => setNewOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />Ajouter une crèche
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+              <p className="text-sm font-medium">Nouvelle crèche</p>
+              <Input placeholder="Nom de la crèche *" value={newEtab.nom} onChange={(e) => setNewEtab({ ...newEtab, nom: e.target.value })} />
+              <Input placeholder="Adresse" value={newEtab.adresse} onChange={(e) => setNewEtab({ ...newEtab, adresse: e.target.value })} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Code postal" value={newEtab.codePostal} onChange={(e) => setNewEtab({ ...newEtab, codePostal: e.target.value })} />
+                <Input placeholder="Ville" value={newEtab.ville} onChange={(e) => setNewEtab({ ...newEtab, ville: e.target.value })} />
+              </div>
+              <Input type="number" min={0} placeholder="Capacité" value={newEtab.capacite} onChange={(e) => setNewEtab({ ...newEtab, capacite: e.target.value })} />
+              <div className="flex gap-2">
+                <Button type="button" size="sm" onClick={createEtablissement} disabled={newBusy}>
+                  {newBusy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Créer et sélectionner
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setNewOpen(false)}>Annuler</Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
