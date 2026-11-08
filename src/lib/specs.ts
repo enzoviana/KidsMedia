@@ -39,6 +39,7 @@ export const specs = {
   transToday: S({ id: "transToday", method: "GET", path: "/transmissions/today/:etablissementId", description: "Transmissions du jour", status: "ok", roles: ["creche"] }),
   docsEtab: S({ id: "docsEtab", method: "GET", path: "/documents/etablissement/:etablissementId", description: "Documents de l'établissement", status: "ok", roles: ["creche", "rsai"] }),
   docsOblig: S({ id: "docsOblig", method: "GET", path: "/documents-obligatoires/etablissement/:etablissementId", description: "Documents obligatoires de la crèche", status: "ok", roles: ["creche", "rsai", "admin", "dev"] }),
+  docsObligEnfant: S({ id: "docsObligEnfant", method: "GET", path: "/documents-obligatoires/enfant/:enfantId", description: "Documents d'inscription exigés pour l'enfant, accessibles aux parents liés", status: "ok", roles: ["creche", "rsai", "medecin", "parent", "admin", "dev"] }),
   diagStats: S({ id: "diagStats", method: "GET", path: "/diagnostics/stats", description: "Statistiques des diagnostics IA", status: "ok", roles: ["rsai", "medecin"] }),
   ordoStats: S({ id: "ordoStats", method: "GET", path: "/ordonnances/stats/:etablissementId", description: "Statistiques des ordonnances", status: "ok", roles: ["rsai"] }),
   ordoMedecin: S({ id: "ordoMedecin", method: "GET", path: "/ordonnances/medecin/:medecinId", description: "Ordonnances du médecin", status: "ok", roles: ["medecin"] }),

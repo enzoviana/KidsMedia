@@ -10,7 +10,7 @@ import { useApiOrDemo } from "@/lib/use-api";
 import { specs } from "@/lib/specs";
 import { localId, updateCoordination, writeSpec } from "@/lib/coordination";
 import { useQueryClient } from "@tanstack/react-query";
-import { docsInscription, demoEnfants } from "@/lib/demo-enfants";
+import { documentsLibres, demoEnfants } from "@/lib/demo-enfants";
 import { fullName } from "./widgets";
 
 /** Bouton + fenêtre « Déposer un document » (upload direct, multipart). */
@@ -29,7 +29,7 @@ export function UploadDocButton({ enfantId, defaultType, onUploaded, label = "D�
   const dynamicTypes = types ? [...new Set(types.map((t) => String(t).trim()).filter(Boolean))] : [];
   const typeOptions = types
     ? (dynamicTypes.length ? dynamicTypes : ["Autre"])
-    : [...docsInscription, "Ordonnance", "Autre"];
+    : [...documentsLibres];
   if (defaultType && !typeOptions.includes(defaultType)) typeOptions.unshift(defaultType);
   const childRequired = ["medecin", "parent", "admin", "dev"].includes(role);
   const qc = useQueryClient();

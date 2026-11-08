@@ -5,10 +5,10 @@ import { EnfantPhoto } from "@/components/dash/enfant-photo";
 import { DataPanel, Pill, Empty, fullName, fmtDate } from "@/components/dash/widgets";
 import { Button } from "@/components/ui/button";
 import { specs } from "@/lib/specs";
-import { toList } from "@/lib/api";
+import { toList, getSession } from "@/lib/api";
 import { useState } from "react";
 import { Link2, CheckCircle2, Circle } from "lucide-react";
-import { demoEnfant, docsInscription } from "@/lib/demo-enfants";
+import { demoEnfant, docsInscription, documentsLibres } from "@/lib/demo-enfants";
 import { LiaisonPanel } from "@/components/dash/liaison";
 import { UploadDocButton } from "@/components/dash/upload";
 import { useApiOrDemo } from "@/lib/use-api";
@@ -37,6 +37,13 @@ const demoOrdo = [{ medicaments: [{ nom: "Doliprane" }], dateDebut: "2026-09-01"
 const demoDiag = [{ symptomes: ["fièvre", "toux"], resultat: "Rhinopharyngite probable", confiance: 0.82, createdAt: "2026-10-03" }];
 const demoTrans = [{ type: "repas", contenu: "A bien mangé.", createdAt: new Date().toISOString() }, { type: "sante", contenu: "37,9 °C, parents prévenus.", createdAt: new Date().toISOString() }];
 const demoDocs = [{ type: "PAI", statut: "valide" }, { type: "Carnet de vaccination", statut: "en_attente" }];
+const demoDossier = docsInscription.map((type, i) => ({ _id: `demo-oblig-${i}`, type, description: "", validiteMois: 12 }));
+const normType = (s: unknown) => String(s ?? "").trim().toLowerCase();
+function sameType(a: unknown, b: unknown) {
+  const x = normType(a);
+  const y = normType(b);
+  return x === y || (x.startsWith("pai") && y.startsWith("pai"));
+}
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4 border-b py-2 text-sm last:border-0"><span className="text-muted-foreground">{k}</span><span className="text-right font-medium">{v}</span></div>;
@@ -53,13 +60,16 @@ function EnfantPage() {
   ], v);
   const enfantR = useApiOrDemo<any>(specs.enfant, demoE, v);
   const enf = (enfantR.data as any) ?? demoE;
+  const dossierR = useApiOrDemo<unknown>(specs.docsObligEnfant, demoDossier, v, { fallbackToDemo: !!getSession()?.demo });
+  const requiredTypes = toList(dossierR.data).map((r) => String(r.type ?? "").trim()).filter(Boolean);
   const docsR = useApiOrDemo<unknown>(specs.enfantDocs, demoDocs, v);
   const [extraDocs, setExtraDocs] = useState<any[]>([]);
   const store = useCoordination();
   const allDocs = [...store.documents.filter((d) => d.enfant?._id === enfantId), ...extraDocs, ...toList(docsR.data)].filter((d, i, a) => !d._id || a.findIndex((x) => x._id === d._id) === i);
-  const has = (t: string) => allDocs.some((d) => String(d.type ?? d.nom).toLowerCase().includes(t.toLowerCase().split(" ")[0] ?? t.toLowerCase()));
+  const otherDocs = allDocs.filter((d) => !requiredTypes.some((t) => sameType(t, d.type ?? d.nom)));
+  const has = (t: string) => allDocs.some((d) => sameType(d.type ?? d.nom, t));
   return (
-    <DashboardShell title="Dossier enfant" actions={<div className="flex flex-wrap gap-2 print:hidden"><Button variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" />Exporter le dossier en PDF</Button><SignalerButton enfantId={enfantId} /><UploadDocButton enfantId={enfantId} onUploaded={(d) => setExtraDocs((x) => [d, ...x])} /><Button variant="outline" asChild><Link to="/enfants"><ArrowLeft className="mr-1 h-4 w-4" />Retour</Link></Button></div>}>
+    <DashboardShell title="Dossier enfant" actions={<div className="flex flex-wrap gap-2 print:hidden"><Button variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" />Exporter le dossier en PDF</Button><SignalerButton enfantId={enfantId} /><UploadDocButton enfantId={enfantId} label="Ajouter un document" types={documentsLibres} onUploaded={(d) => setExtraDocs((x) => [d, ...x])} /><Button variant="outline" asChild><Link to="/enfants"><ArrowLeft className="mr-1 h-4 w-4" />Retour</Link></Button></div>}>
       <AccessGuard enfantId={enfantId}>
       <EnfantPhoto enfantId={enfantId} photoUrl={enf.photoUrl} nom={[enf.prenom, enf.nom].filter(Boolean).join(" ")} />
       <DocumentAlerts enfantId={enfantId} />
@@ -93,17 +103,19 @@ function EnfantPage() {
             {(d) => toList(d).length ? toList(d).map((t, i) => <Row key={i} k={t.type} v={t.contenu ?? t.message} />) : <Empty />}
           </DataPanel>
           <Panel title="Documents" icon={FileText} spec={specs.enfantDocs} demo={docsR.demo} reason={docsR.reason}>
-            {allDocs.length ? allDocs.map((x, i) => <Row key={i} k={x.type ?? x.nom} v={<Pill tone={x.statut === "valide" ? "success" : x.statut === "rejete" ? "danger" : "warning"}>{String(x.statut ?? "en_attente").replace("_", " ")}</Pill>} />) : <Empty />}
+            {otherDocs.length ? otherDocs.map((x, i) => <Row key={i} k={x.type ?? x.nom} v={<Pill tone={x.statut === "valide" ? "success" : x.statut === "rejete" ? "danger" : "warning"}>{String(x.statut ?? "en_attente").replace("_", " ")}</Pill>} />) : <Empty text="Aucun document libre. Utilisez « Ajouter un document » pour un PAI, une autorisation de sortie, une ordonnance…" />}
           </Panel>
-          <Panel title="Dossier d'inscription" icon={QrCode} spec={specs.docsOblig} demo={docsR.demo} reason={docsR.reason}>
-            <ul className="space-y-2 text-sm">
-              {docsInscription.map((d) => (
-                <li key={d} className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2">{has(d) ? <CheckCircle2 className="h-4 w-4 text-success" /> : <Circle className="h-4 w-4 text-muted-foreground" />}{d}</span>
-                  {!has(d) && <UploadDocButton size="sm" label="Ajouter" enfantId={enfantId} defaultType={d} onUploaded={(doc) => setExtraDocs((x) => [doc, ...x])} />}
-                </li>
-              ))}
-            </ul>
+          <Panel title="Dossier d'inscription" icon={QrCode} spec={specs.docsOblig} demo={dossierR.demo} reason={dossierR.reason}>
+            {requiredTypes.length ? (
+              <ul className="space-y-2 text-sm">
+                {requiredTypes.map((d) => (
+                  <li key={d} className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">{has(d) ? <CheckCircle2 className="h-4 w-4 text-success" /> : <Circle className="h-4 w-4 text-muted-foreground" />}{d}</span>
+                    {!has(d) && <UploadDocButton size="sm" label="Ajouter" enfantId={enfantId} defaultType={d} types={requiredTypes} onUploaded={(doc) => setExtraDocs((x) => [doc, ...x])} />}
+                  </li>
+                ))}
+              </ul>
+            ) : <Empty text="Aucun document d'inscription exigé par la crèche pour le moment." />}
           </Panel>
         </div>
       </div>

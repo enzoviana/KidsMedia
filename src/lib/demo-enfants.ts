@@ -21,4 +21,6 @@ export function demoEnfant(id: string) {
   return demoEnfants.find((e) => e._id === id) ?? { ...demoEnfants[0], _id: id, prenom: id.replace(/^demo-/, "").replace(/^./, (c) => c.toUpperCase()), nom: "", codeLiaison: `${id.slice(5, 8).toUpperCase() || "ENF"}-0000` };
 }
 
-export const docsInscription = ["Certificat médical d'aptitude", "Carnet de vaccination", "Justificatif de domicile", "Attestation CAF", "Autorisation de soins", "PAI signé (si allergie)"];
+export const docsInscription = ["Certificat médical d'aptitude", "Carnet de vaccination", "Justificatif de domicile", "Attestation CAF", "Autorisation de soins"];
+/** Documents libres du dossier, hors dossier d'inscription. */
+export const documentsLibres = ["PAI", "Autorisation de sortie", "Ordonnance", "Compte rendu médical", "Autre"];
