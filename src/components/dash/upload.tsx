@@ -14,15 +14,24 @@ import { docsInscription, demoEnfants } from "@/lib/demo-enfants";
 import { fullName } from "./widgets";
 
 /** Bouton + fenêtre « Déposer un document » (upload direct, multipart). */
-export function UploadDocButton({ enfantId, defaultType, onUploaded, label = "Déposer un document", size }: {
+export function UploadDocButton({ enfantId, defaultType, onUploaded, label = "Déposer un document", size, types }: {
   enfantId?: string; defaultType?: string; onUploaded?: (doc: any) => void; label?: string; size?: "sm" | "default";
+  /** Types proposés. Tableau vide = « Autre » uniquement ; absent = liste d'inscription par défaut. */
+  types?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const role = roleToKey(getSession()?.user.role) ?? "parent";
-  const spec = ["creche", "rsai"].includes(role) ? specs.uploadDirect : specs.depotMedical;
-  const childrenR = useApiOrDemo<unknown>(role === "parent" ? specs.parentEnfants : ["creche", "rsai"].includes(role) ? specs.enfantsEtab : specs.enfants, demoEnfants);
+  const spec = ["creche", "rsai", "admin", "dev"].includes(role) ? specs.uploadDirect : specs.depotMedical;
+  const childrenSpec = role === "parent" ? specs.parentEnfants : specs.enfants;
+  const childrenR = useApiOrDemo<unknown>(childrenSpec, demoEnfants, undefined, { fallbackToDemo: !!getSession()?.demo });
   const children = toList(childrenR.data);
+  const dynamicTypes = types ? [...new Set(types.map((t) => String(t).trim()).filter(Boolean))] : [];
+  const typeOptions = types
+    ? (dynamicTypes.length ? dynamicTypes : ["Autre"])
+    : [...docsInscription, "Ordonnance", "Autre"];
+  if (defaultType && !typeOptions.includes(defaultType)) typeOptions.unshift(defaultType);
+  const childRequired = ["medecin", "parent", "admin", "dev"].includes(role);
   const qc = useQueryClient();
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,6 +51,7 @@ export function UploadDocButton({ enfantId, defaultType, onUploaded, label = "D�
       onUploaded?.(doc);
       qc.invalidateQueries({ queryKey: ["api", specs.enfantDocs.id] });
       qc.invalidateQueries({ queryKey: ["api", specs.docsEtab.id] });
+      qc.invalidateQueries({ queryKey: ["api", specs.documentsAccessibles.id] });
       toast.success(r.demo ? "Document déposé (mode démo)" : "Document déposé, en attente de validation");
       setOpen(false);
     } catch (err) { toast.error((err as Error).message); } finally { setBusy(false); }
@@ -59,11 +69,11 @@ export function UploadDocButton({ enfantId, defaultType, onUploaded, label = "D�
             <div className="space-y-1.5"><Label htmlFor="fichier">Fichier *</Label><Input id="fichier" name="fichier" type="file" accept=".pdf,.jpg,.jpeg,.png" required /></div>
             <div className="space-y-1.5"><Label htmlFor="type">Type *</Label>
               <select id="type" name="type" defaultValue={defaultType ?? ""} required className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
-                <option value="">—</option>{[...docsInscription, "Ordonnance", "Autre"].map((d) => <option key={d}>{d}</option>)}
+                <option value="">—</option>{typeOptions.map((d) => <option key={d}>{d}</option>)}
               </select></div>
             {!enfantId && <div className="space-y-1.5"><Label htmlFor="enfant">Enfant</Label>
-              <select id="enfant" name="enfant" required={["medecin", "parent"].includes(role)} className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
-                <option value="">{["medecin", "parent"].includes(role) ? "Sélectionner un enfant" : "Document de l'établissement"}</option>{children.map((e) => <option key={e._id} value={e._id}>{fullName(e)}</option>)}
+              <select id="enfant" name="enfant" required={childRequired} className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
+                <option value="">{childRequired ? "Sélectionner un enfant" : "Document de l'établissement"}</option>{children.map((e) => <option key={e._id ?? e.id} value={e._id ?? e.id}>{fullName(e)}</option>)}
               </select></div>}
             <div className="space-y-1.5"><Label htmlFor="dateValidite">Valide jusqu'au</Label><Input id="dateValidite" name="dateValidite" type="date" /></div>
             <DialogFooter>

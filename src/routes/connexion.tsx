@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Baby, HeartPulse, Stethoscope, Loader2, ArrowLeft, MessageSquareText, KeyRound } from "lucide-react";
@@ -35,6 +36,7 @@ const demos: { role: RoleKey; icon: typeof Baby }[] = [
 
 function Connexion() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +65,7 @@ function Connexion() {
   }, [timer]);
 
   const msg = (err: unknown) => ((err as Error).message === "Failed to fetch" ? "Le serveur ne répond pas. Réessayez dans un instant." : (err as Error).message);
+  const resetCache = async () => { await qc.cancelQueries(); qc.clear(); };
 
   async function sendForgot(e: React.FormEvent) {
     e.preventDefault();
@@ -93,7 +96,7 @@ function Connexion() {
         setError(`Le rôle « ${p.user.role ?? "inconnu"} » n'a pas d'espace sur ce tableau de bord.`);
         return;
       }
-      if (p.session) { navigate({ to: roleHome[roleToKey(p.session.user.role)!] }); return; }
+      if (p.session) { await resetCache(); navigate({ to: roleHome[roleToKey(p.session.user.role)!] }); return; }
       mfa.reset();
 
       // Déterminer la méthode par défaut selon la hiérarchie de priorité
@@ -125,7 +128,7 @@ function Connexion() {
 
   async function viaPasskey() {
     setError(null); setLoading(true);
-    try { const s = await mfa.passkey(); const k = roleToKey(s.user.role); if (k) navigate({ to: roleHome[k] }); } catch (err) { setError(msg(err)); } finally { setLoading(false); }
+    try { const s = await mfa.passkey(); const k = roleToKey(s.user.role); if (k) { await resetCache(); navigate({ to: roleHome[k] }); } } catch (err) { setError(msg(err)); } finally { setLoading(false); }
   }
 
   async function verify(e?: React.FormEvent) {
@@ -138,6 +141,7 @@ function Connexion() {
       if (demoRole) {
         if (code !== "123456") throw new Error("Code incorrect. En mode démo, le code est 123456.");
         setSession({ demo: true, user: { prenom: "Démo", nom: roleLabels[demoRole], role: demoRole, email: "demo@kidsmed.ia", telephone: "+33600000044" } });
+        await resetCache();
         navigate({ to: roleHome[demoRole] });
         return;
       }
@@ -145,6 +149,7 @@ function Connexion() {
       const s = await mfa.verify(code);
       const k = roleToKey(s.user.role);
       if (!k) { setSession(null); setError("Rôle inconnu."); return; }
+      await resetCache();
       navigate({ to: roleHome[k] });
     } catch (err) {
       setError(msg(err));

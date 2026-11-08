@@ -14,19 +14,24 @@ export interface ApiResult<T> {
 export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, string | undefined>, opts?: { refetchInterval?: number; fallbackToDemo?: boolean }) {
   const q = useQuery<ApiResult<T>>({
     queryKey: ["api", spec.id, vars ?? null],
-    staleTime: 60_000,
+    staleTime: 10_000,
+    refetchOnMount: "always",
     refetchInterval: opts?.refetchInterval ?? false,
     retry: false,
     queryFn: async () => {
       const at = new Date().toLocaleTimeString("fr-FR");
-      const s = getSession();
-      const realOnly = opts?.fallbackToDemo === false && !!s && !s.demo;
+      const first = getSession();
+      const realOnly = opts?.fallbackToDemo === false && !!first && !first.demo;
       const fail = (d: Omit<Diagnostic, "at">, reason: string): ApiResult<T> => {
         setDiag(spec.id, { ...d, at });
         if (realOnly) return { data: [] as unknown as T, demo: false, reason };
         return { data: demo, demo: true, reason };
       };
+      // La session peut être complétée par /auth/me et /etablissements : il faut la
+      // relire AVANT de construire le chemin, sinon le premier chargement part avec
+      // un etablissementId manquant et affiche la démo jusqu'au rafraîchissement.
       if (spec.path.includes(":etablissementId") && !vars?.["etablissementId"]) await ensureEtablissement();
+      const s = getSession();
       if (!s || s.demo) return fail({ kind: "demo-session", method: spec.method, url: fullUrl(spec.path), message: s ? "Session démo" : "Session absente" }, s ? "Mode démo" : "Session absente");
       if (/\s/.test(spec.path)) return fail({ kind: "text", method: spec.method, url: spec.path, message: "Non appelable" }, "Exigence décrite en texte (pas une URL appelable) : à vérifier côté serveur");
       const p = { ...userParams(s.user), ...(vars ?? {}) };

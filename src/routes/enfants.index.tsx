@@ -8,6 +8,7 @@ import type { Crud } from "@/components/dash/crud";
 import { EnfantLink } from "@/components/dash/crud";
 import { LierCodeButton, ScanQrButton } from "@/components/dash/liaison";
 import { Button } from "@/components/ui/button";
+import { getSession, roleToKey } from "@/lib/api";
 
 export const Route = createFileRoute("/enfants/")({
   head: () => ({
@@ -30,5 +31,11 @@ const crud: Crud = { entity: "un enfant", base: "/enfants", view: "enfant", noCr
 
 function Page() {
   void Link; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Enfants" spec={specs.enfantsEtab} demo={demo} cols={cols} icon={Baby} actions={<><ScanQrButton /><LierCodeButton /><Button asChild><Link to="/enfants/nouveau"><Plus className="mr-1 h-4 w-4"/>Ajouter</Link></Button></>} />;
+  const role = roleToKey(getSession()?.user.role);
+  // Le parent voit ses enfants liés ; crèche, RSAI, médecin, admin et dev utilisent
+  // /enfants, qui applique le périmètre côté serveur. On évite ainsi d'exiger un
+  // etablissementId absent (admin multi-crèches, RSAI sans affectation unique).
+  const spec = role === "parent" ? specs.parentEnfants : specs.enfants;
+  const canCreate = role === "creche" || role === "parent";
+  return <ListPage crud={crud} title="Enfants" spec={spec} demo={demo} cols={cols} icon={Baby} actions={canCreate ? <><ScanQrButton /><LierCodeButton /><Button asChild><Link to="/enfants/nouveau"><Plus className="mr-1 h-4 w-4"/>Ajouter</Link></Button></> : undefined} />;
 }

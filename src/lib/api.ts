@@ -333,7 +333,10 @@ export function ensureEtablissement(): Promise<void> {
       } catch { /* ignore */ }
     }
     const cur = getSession();
-    if (cur) setSession({ ...cur, user: { ...cur.user, ...user } });
+    if (cur) {
+      setSession({ ...cur, user: { ...cur.user, ...user } });
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("kidsmed-session"));
+    }
   })().finally(() => { etabPromise = null; });
   return etabPromise;
 }

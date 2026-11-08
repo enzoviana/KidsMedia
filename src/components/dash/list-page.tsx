@@ -47,10 +47,10 @@ export function DataTable({ rows, cols, onOpenRow }: { rows: any[]; cols: Col[];
 const rid = (r: any) => String(r?._id ?? r?.id ?? "");
 
 /** Page liste générique : charge la spec (API ou démo), recherche, tableau et boutons Ajouter/Voir/Modifier/Supprimer. */
-export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow }: {
+export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow, sortRows }: {
   title: string; role?: RoleKey | undefined; spec: RouteSpec; demo: any[]; cols: Col[]; icon?: LucideIcon | undefined; actions?: ReactNode;
   vars?: Record<string, string | undefined> | undefined; before?: ReactNode; crud?: Crud | undefined; additionalRows?: any[];
-  onOpenRow?: ((row: any) => void) | undefined;
+  onOpenRow?: ((row: any) => void) | undefined; sortRows?: ((a: any, b: any) => number) | undefined;
 }) {
   const r = useApiOrDemo<unknown>(spec, demo, vars);
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
   const [viewing, setViewing] = useState<any>(null);
   const [deleting, setDeleting] = useState<any>(null);
   const base = [...additionalRows, ...(local ?? toList(r.data))].filter((row, index, all) => !row._id || all.findIndex((x) => x._id === row._id) === index);
-  const rows = base.filter((x) => !q || JSON.stringify(x).toLowerCase().includes(q.toLowerCase()));
+  const rows = base.filter((x) => !q || JSON.stringify(x).toLowerCase().includes(q.toLowerCase())).sort(sortRows);
 
   const done = (msg: string, demoMode: boolean) => {
     toast.success(demoMode ? `${msg} (mode démo)` : msg);
