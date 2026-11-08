@@ -24,7 +24,7 @@ export const Route = createFileRoute("/ordonnances")({
 const demo: any[] = [{enfant:{prenom:"Jade",nom:"Petit"},medicaments:[{nom:"Amoxicilline"}],dateDebut:"2026-10-01",dateFin:"2026-10-10",medecin:{prenom:"Dr",nom:"Moreau"}},{enfant:{prenom:"Noah",nom:"Bernard"},medicaments:[{nom:"Ventoline"}],dateDebut:"2026-09-01",dateFin:"2027-03-01",medecin:{prenom:"Dr",nom:"Moreau"}}];
 const cols: Col[] = [{label:"Enfant",render:(r)=><EnfantLink e={r.enfant} />},{label:"Traitement / Fichier",render:(r)=>r.nom || (r.medicaments??[]).map((m:any)=>m.nom??m).join(", ")||"—"},{label:"Médecin",render:(r)=>fullName(r.medecin)},{label:"Validité",render:(r)=>`${fmtDate(r.dateDebut)} → ${fmtDate(r.dateFin ?? r.dateValidite)}`}];
 
-const crud: Crud = {"entity": "une ordonnance", "base": "/ordonnances", "fields": [{"name": "enfant", "label": "Enfant", "lookup": "enfant", "required": true}, {"name": "medicaments", "label": "Médicaments (séparés par virgules)", "type": "text", "required": true}, {"name": "dateDebut", "label": "Début", "type": "date", "required": true}, {"name": "dateFin", "label": "Fin", "type": "date", "required": true}, {"name": "notes", "label": "Notes", "type": "textarea"}]};
+const crud: Crud = {"entity": "une ordonnance", "base": "/ordonnances", "view": "document", "fields": [{"name": "enfant", "label": "Enfant", "lookup": "enfant", "required": true}, {"name": "medicaments", "label": "Médicaments (séparés par virgules)", "type": "text", "required": true}, {"name": "dateDebut", "label": "Début", "type": "date", "required": true}, {"name": "dateFin", "label": "Fin", "type": "date", "required": true}, {"name": "notes", "label": "Notes", "type": "textarea"}]};
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
