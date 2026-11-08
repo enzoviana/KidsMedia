@@ -10,7 +10,7 @@ import { RgpdButton } from "@/components/dash/medical";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { specs } from "@/lib/specs";
-import { toList } from "@/lib/api";
+import { getSession, toList } from "@/lib/api";
 import { demoEnfants, enfantIdOf } from "@/lib/demo-enfants";
 
 export const Route = createFileRoute("/parent")({
@@ -58,10 +58,11 @@ function QrButton({ e }: { e: any }) {
 }
 
 function Page() {
+  const realOnly = !getSession()?.demo;
   return (
     <DashboardShell role="parent" title="Bonjour" actions={<div className="flex flex-wrap gap-2"><DeclarerEnfantButton /><LierCodeButton /><RgpdButton /></div>}>
-      <DataPanel title="Mes enfants" icon={Baby} spec={specs.parentEnfants} demoData={demoMine}>
-        {(d) => (
+      <DataPanel title="Mes enfants" icon={Baby} spec={specs.parentEnfants} demoData={demoMine} realOnly={realOnly}>
+        {(d) => toList(d).length ? (
           <div className="grid gap-4 md:grid-cols-2">
             {toList(d).map((e) => {
               const id = enfantIdOf(e) ?? "";
@@ -87,15 +88,15 @@ function Page() {
               );
             })}
           </div>
-        )}
+        ) : <Empty text="Aucun enfant n'est encore lié à votre compte. Saisissez le code de liaison fourni par la crèche, ou attendez l'invitation envoyée à votre adresse e-mail." />}
       </DataPanel>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <DataPanel title="Alertes santé" icon={BellRing} spec={specs.parentAlertes} demoData={demoAlertes}>
+        <DataPanel title="Alertes santé" icon={BellRing} spec={specs.parentAlertes} demoData={demoAlertes} realOnly={realOnly}>
           {(d) => toList(d).length ? (
             <ul className="space-y-2 text-sm">{toList(d).map((x, i) => <li key={i} className="flex gap-2"><Pill tone={x.niveau === "eleve" ? "danger" : x.niveau === "moyen" ? "warning" : "default"}>{x.enfant?.prenom}</Pill><span>{x.message}</span></li>)}</ul>
           ) : <Empty text="Aucune alerte" />}
         </DataPanel>
-        <DataPanel title="Journée à la crèche" icon={NotebookPen} spec={specs.parentTrans} demoData={demoTrans}>
+        <DataPanel title="Journée à la crèche" icon={NotebookPen} spec={specs.parentTrans} demoData={demoTrans} realOnly={realOnly}>
           {(d) => toList(d).length ? (
             <ul className="space-y-2 text-sm">{toList(d).map((t, i) => <li key={i} className="border-b pb-2 last:border-0"><span className="mr-2 text-xs uppercase text-muted-foreground">{t.enfant?.prenom} · {t.type}</span>{t.contenu}</li>)}</ul>
           ) : <Empty text="Pas encore de transmission aujourd'hui" />}

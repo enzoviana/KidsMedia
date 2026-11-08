@@ -47,12 +47,14 @@ export function DataTable({ rows, cols, onOpenRow }: { rows: any[]; cols: Col[];
 const rid = (r: any) => String(r?._id ?? r?.id ?? "");
 
 /** Page liste générique : charge la spec (API ou démo), recherche, tableau et boutons Ajouter/Voir/Modifier/Supprimer. */
-export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow, sortRows }: {
+export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow, sortRows, realOnly }: {
   title: string; role?: RoleKey | undefined; spec: RouteSpec; demo: any[]; cols: Col[]; icon?: LucideIcon | undefined; actions?: ReactNode;
   vars?: Record<string, string | undefined> | undefined; before?: ReactNode; crud?: Crud | undefined; additionalRows?: any[];
   onOpenRow?: ((row: any) => void) | undefined; sortRows?: ((a: any, b: any) => number) | undefined;
+  /** Ne jamais afficher les données de démonstration pour une session réelle. */
+  realOnly?: boolean | undefined;
 }) {
-  const r = useApiOrDemo<unknown>(spec, demo, vars);
+  const r = useApiOrDemo<unknown>(spec, demo, vars, { fallbackToDemo: !realOnly });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [q, setQ] = useState("");

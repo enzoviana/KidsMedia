@@ -37,5 +37,5 @@ function Page() {
   // etablissementId absent (admin multi-crèches, RSAI sans affectation unique).
   const spec = role === "parent" ? specs.parentEnfants : specs.enfants;
   const canCreate = role === "creche" || role === "parent";
-  return <ListPage crud={crud} title="Enfants" spec={spec} demo={demo} cols={cols} icon={Baby} actions={canCreate ? <><ScanQrButton /><LierCodeButton /><Button asChild><Link to="/enfants/nouveau"><Plus className="mr-1 h-4 w-4"/>Ajouter</Link></Button></> : undefined} />;
+  return <ListPage crud={crud} title="Enfants" spec={spec} demo={demo} cols={cols} icon={Baby} realOnly={!getSession()?.demo} actions={canCreate ? <><ScanQrButton /><LierCodeButton /><Button asChild><Link to="/enfants/nouveau"><Plus className="mr-1 h-4 w-4"/>Ajouter</Link></Button></> : undefined} />;
 }

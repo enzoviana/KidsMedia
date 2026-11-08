@@ -21,11 +21,11 @@ import {
   RsaiHome, RsaiRegistres, SosSheet, useGeo,
 } from "@/components/mobile/screens";
 
-type Search = { tab?: string; enfant?: string; page?: string };
+type Search = { tab?: string; enfant?: string; page?: string; email?: string; invitation?: string };
 export const Route = createFileRoute("/app")({
   validateSearch: (s: Record<string, unknown>): Search => {
     const o: Search = {};
-    for (const k of ["tab", "enfant", "page"] as const) if (typeof s[k] === "string" && s[k]) o[k] = s[k] as string;
+    for (const k of ["tab", "enfant", "page", "email", "invitation"] as const) if (typeof s[k] === "string" && s[k]) o[k] = s[k] as string;
     return o;
   },
   head: () => ({
@@ -82,7 +82,7 @@ function MobileApp() {
 
 /* ---------- Pages publiques : connexion, inscription, mot de passe, sélection démo ---------- */
 function Public({ onDone }: { onDone: (s: Session) => void }) {
-  const { page } = Route.useSearch();
+  const { page, email, invitation } = Route.useSearch();
   const navigate = Route.useNavigate();
   const to = (p?: string) => navigate({ search: p ? { page: p } : {} });
   function demo(role: MRole) {
@@ -90,7 +90,7 @@ function Public({ onDone }: { onDone: (s: Session) => void }) {
     setSession(s); navigate({ search: {} }); onDone(s);
   }
   if (page === "demo") return <DemoSelector onPick={demo} onBack={() => to()} />;
-  if (page === "register") return <Register onBack={() => to()} />;
+  if (page === "register") return <Register onBack={() => to()} initialEmail={email ?? ""} invitationToken={invitation ?? ""} />;
   if (page === "forgot") return <Forgot onBack={() => to()} onCode={() => to("reset")} />;
   if (page === "reset") return <Reset onBack={() => to()} />;
   return <Login onDone={onDone} to={to} />;
@@ -175,25 +175,31 @@ function DemoSelector({ onPick, onBack }: { onPick: (r: MRole) => void; onBack: 
   );
 }
 
-function Register({ onBack }: { onBack: () => void }) {
-  const [f, setF] = useState({ prenom: "", nom: "", email: "", telephone: "", password: "", code: "" });
+function Register({ onBack, initialEmail = "", invitationToken = "" }: { onBack: () => void; initialEmail?: string; invitationToken?: string }) {
+  const [f, setF] = useState({ prenom: "", nom: "", email: initialEmail, telephone: "", password: "", code: "" });
   const [ok, setOk] = useState(false);
   const [busy, setBusy] = useState(false);
+  const invited = !!invitationToken;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
   return (
     <div className="pb-10">
-      <Header title="Inscription" sub="Réservée aux parents" onBack={onBack} />
-      {ok ? <div className="mt-8 px-4"><Glass className="text-center"><ShieldCheck className="mx-auto h-8 w-8 text-brand-green" /><p className="mt-3 text-base font-bold">Compte créé</p><p className="text-muted-foreground">Connectez-vous avec votre e-mail et votre mot de passe.</p><div className="mt-4"><PrimaryBtn onClick={onBack}>Se connecter</PrimaryBtn></div></Glass></div> : (
+      <Header title="Inscription" sub={invited ? "Invitation à un dossier enfant" : "Réservée aux parents"} onBack={onBack} />
+      {ok ? <div className="mt-8 px-4"><Glass className="text-center"><ShieldCheck className="mx-auto h-8 w-8 text-brand-green" /><p className="mt-3 text-base font-bold">Compte créé</p><p className="text-muted-foreground">Connectez-vous avec votre e-mail et votre mot de passe{invited ? " : le dossier de l'enfant sera automatiquement rattaché à votre compte." : "."}</p><div className="mt-4"><PrimaryBtn onClick={onBack}>Se connecter</PrimaryBtn></div></Glass></div> : (
         <form className="mt-6 space-y-2 px-4" onSubmit={async (e) => {
           e.preventDefault(); if (f.password.length < 8) { toast.error("Le mot de passe doit faire au moins 8 caractères."); return; }
           setBusy(true);
-          try { await send("POST", "/auth/register", { ...f, role: "parent", codeLiaison: f.code || undefined }); setOk(true); } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
+          try {
+            const r = await send<{ invitationsAcceptees?: number }>("POST", "/auth/register", { ...f, invitationToken: invitationToken || undefined, role: "parent", codeLiaison: f.code || undefined });
+            if (r.data?.invitationsAcceptees) toast.success(`${r.data.invitationsAcceptees} dossier(s) rattaché(s) à votre compte`);
+            setOk(true);
+          } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
         }}>
+          {invited && <p className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass)] p-3 text-sm">Vous avez été invité(e) à rejoindre un dossier enfant. Utilisez l'adresse e-mail qui a reçu l'invitation.</p>}
           <div className="grid grid-cols-2 gap-2"><input required className={inputCls} placeholder="Prénom" value={f.prenom} onChange={set("prenom")} /><input required className={inputCls} placeholder="Nom" value={f.nom} onChange={set("nom")} /></div>
-          <input required type="email" className={inputCls} placeholder="Email" value={f.email} onChange={set("email")} />
+          <input required type="email" readOnly={invited} className={inputCls} placeholder="Email" value={f.email} onChange={set("email")} />
           <input required type="tel" className={inputCls} placeholder="Téléphone (pour le code SMS)" value={f.telephone} onChange={set("telephone")} />
           <input required type="password" className={inputCls} placeholder="Mot de passe (8 caractères min.)" value={f.password} onChange={set("password")} />
-          <input className={inputCls} placeholder="Code de liaison de la crèche (facultatif)" value={f.code} onChange={set("code")} />
+          {!invited && <input className={inputCls} placeholder="Code de liaison de la crèche (facultatif)" value={f.code} onChange={set("code")} />}
           <PrimaryBtn type="submit" tone="gradient" disabled={busy}><UserPlus className="h-5 w-5" />{busy ? "Création…" : "Créer mon compte"}</PrimaryBtn>
           <p className="text-center text-xs text-muted-foreground">En vous inscrivant, vous acceptez le traitement de vos données de santé conformément au RGPD.</p>
         </form>)}

@@ -67,7 +67,16 @@ export function LierCodeButton() {
   );
 }
 
-export interface Lien { _id?: string; user: { prenom?: string; nom?: string; email?: string }; role: string; acces?: string }
+export interface Lien {
+  _id?: string;
+  id?: string;
+  invitation?: boolean;
+  statut?: string;
+  expiresAt?: string;
+  user: { prenom?: string; nom?: string; email?: string };
+  role: string;
+  acces?: string;
+}
 
 /** Encart Liaison & Accès sur le dossier enfant. */
 export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initialLiens }: { enfantId: string; code?: string; prenom?: string; liens: Lien[] }) {
@@ -108,9 +117,15 @@ export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initi
         <ul className="divide-y text-sm">
           {liens.map((l, i) => (
             <li key={l._id ?? i} className="flex items-center justify-between gap-2 py-2">
-              <div className="min-w-0"><p className="truncate font-medium">{fullName(l.user)}</p><p className="truncate text-xs text-muted-foreground">{l.user.email}</p></div>
-              <div className="flex items-center gap-2"><Pill tone={l.role === "parent" ? "success" : "default"}>{l.role}</Pill>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Révoquer" onClick={() => setRevoke(l)}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="min-w-0">
+                <p className="truncate font-medium">{fullName(l.user)}</p>
+                <p className="truncate text-xs text-muted-foreground">{l.user.email}</p>
+                {l.invitation && <p className="text-xs text-warning">Invitation envoyée · en attente d'inscription</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <Pill tone={l.invitation ? "warning" : l.role === "parent" ? "success" : "default"}>{l.invitation ? "invitation" : l.role}</Pill>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Révoquer" onClick={() => setRevoke(l)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
             </li>
           ))}
         </ul>
@@ -121,17 +136,31 @@ export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initi
         submitLabel="Lier" onSubmit={async (v) => {
           try {
             const r = await send<any>("POST", "/liaisons", { enfant: enfantId, email: v.email, role: v.role });
-            setLiens((x) => [...x, { _id: r.data?._id ?? `local-${Date.now()}`, user: { email: String(v.email), prenom: String(v.email).split("@")[0] ?? "" }, role: String(v.role) }]);
-            toast.success(r.demo ? "Personne liée (mode démo)" : "Personne liée");
+            if (r.demo) {
+              setLiens((x) => [...x, { _id: `local-${Date.now()}`, user: { email: String(v.email), prenom: String(v.email).split("@")[0] ?? "" }, role: String(v.role) }]);
+              toast.success("Personne liée (mode démo)");
+              return;
+            }
+            const d = r.data ?? {};
+            if (d.invitation) {
+              setLiens((x) => [...x, { _id: `inv_${d.id}`, id: d.id, invitation: true, statut: "en_attente", expiresAt: d.expiresAt, user: { email: d.email ?? String(v.email), prenom: String(d.email ?? v.email).split("@")[0] ?? "" }, role: d.role ?? String(v.role) }]);
+              toast.success(d.emailSent === false ? "Invitation créée, mais l'e-mail n'a pas pu être envoyé" : `Invitation envoyée à ${d.email ?? v.email}`, {
+                description: d.emailSent === false ? "Transmettez le lien d'inscription manuellement." : "La personne pourra créer son compte et sera liée automatiquement.",
+              });
+            } else {
+              setLiens((x) => [...x, { _id: d._id ?? `local-${Date.now()}`, user: { email: String(v.email), prenom: String(v.email).split("@")[0] ?? "" }, role: String(v.role) }]);
+              toast.success("Personne liée");
+            }
           } catch (e) { toast.error((e as Error).message); throw e; }
         }} />
       <ConfirmDialog open={!!revoke} onOpenChange={(o) => !o && setRevoke(null)} title="Révoquer l'accès ?" description={`${fullName(revoke?.user)} n'aura plus accès au dossier.`} label="Révoquer"
         onConfirm={async () => {
           if (!revoke) return;
           try {
-            const r = await send("DELETE", `/liaisons/${revoke._id}`);
+            const path = revoke.invitation ? `/liaisons/invitations/${revoke.id ?? String(revoke._id).replace(/^inv_/, "")}` : `/liaisons/${revoke._id}`;
+            const r = await send("DELETE", path);
             setLiens((x) => x.filter((l) => l !== revoke));
-            toast.success(r.demo ? "Accès révoqué (mode démo)" : "Accès révoqué");
+            toast.success(r.demo ? "Accès révoqué (mode démo)" : revoke.invitation ? "Invitation annulée" : "Accès révoqué");
           } catch (e) { toast.error((e as Error).message); }
         }} />
     </div>
