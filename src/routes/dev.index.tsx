@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Cpu, Gauge, Bug, LifeBuoy, Database, Route as RouteIcon, Server, LayoutDashboard, MemoryStick } from "lucide-react";
-import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, Legend } from "recharts";
 import { DashboardShell, type NavGroup } from "@/components/dash/shell";
-import { DataPanel, StatCard, Pill, fmtDate, tip } from "@/components/dash/widgets";
+import { DataPanel, StatCard, Pill, fmtDate } from "@/components/dash/widgets";
+import { TrafficChart } from "@/components/dash/dev-charts";
+import { fmtMetric, normalizeDevMetrics } from "@/lib/dev-metrics";
 import { specs } from "@/lib/specs";
 import { toList } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -66,28 +67,15 @@ function Dev() {
   return (
     <DashboardShell role="dev" title="Console développeur" groups={nav} actions={<div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link to="/dev/rgpd"><Database className="h-4 w-4" />Registre RGPD</Link></Button><Button asChild><Link to="/dev/performance"><Gauge className="h-4 w-4" />Performance</Link></Button></div>}>
       <div id="top" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Requêtes / min" icon={Gauge} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => d.requestsPerMinute} trend={{ value: "+8 %" }} />
-        <StatCard label="Latence moyenne" icon={Cpu} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => `${d.avgResponseTime} ms`} />
-        <StatCard label="Taux d'erreur" icon={Bug} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => `${d.errorRate} %`} trend={{ value: "+0,1", up: false }} />
-        <StatCard label="Mémoire" icon={MemoryStick} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => `${d.memory} %`} />
+        <StatCard label="Requêtes / min" icon={Gauge} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => fmtMetric(normalizeDevMetrics(d).requestsPerMinute, "", 1)} trend={{ value: "+8 %" }} />
+        <StatCard label="Latence moyenne" icon={Cpu} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => fmtMetric(normalizeDevMetrics(d).avgResponseTime, "ms")} />
+        <StatCard label="Taux d'erreur" icon={Bug} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => fmtMetric(normalizeDevMetrics(d).errorRate, "%", 2)} trend={{ value: "+0,1", up: false }} />
+        <StatCard label="Mémoire" icon={MemoryStick} spec={specs.devMetrics} demoData={demoMetrics} pick={(d) => fmtMetric(normalizeDevMetrics(d).memory, "%", 1)} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
         <DataPanel title="Trafic & latence" icon={Gauge} spec={specs.devMetrics} demoData={demoMetrics} className="xl:col-span-2" actions={<Button size="sm" variant="ghost" asChild><Link to="/dev/performance">Détails</Link></Button>}>
-          {(d) => (
-            <div className="h-72">
-              <ResponsiveContainer>
-                <LineChart data={d.history ?? []}>
-                  <CartesianGrid vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
-                  <Tooltip {...tip} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="requests" name="Requêtes" stroke="var(--chart-1)" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="latency" name="Latence (ms)" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {(d) => <TrafficChart raw={d} />}
         </DataPanel>
         <DataPanel id="services" title="Services" icon={Server} spec={specs.devHealth} demoData={demoHealth}>
           {(d) => <ul className="divide-y text-sm">{(d.services ?? []).map((s, i) => <li key={i} className="flex flex-wrap items-center justify-between gap-2 py-3"><span className="flex items-center gap-2"><span className={`h-2 w-2 shrink-0 rounded-full ${s.status === "up" ? "bg-success" : s.status === "down" ? "bg-destructive" : "bg-warning"}`} />{s.name}</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{s.latency} ms <Pill tone={st(s.status)}>{s.status === "up" ? "Actif" : s.status === "down" ? "Indisponible" : "Dégradé"}</Pill></span></li>)}</ul>}
