@@ -9,6 +9,7 @@ import { specs } from "@/lib/specs";
 import { getSession, roleToKey } from "@/lib/api";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useApiOrDemo } from "@/lib/use-api";
 import { toList } from "@/lib/api";
 import { forfaitsPourRole, demoTarifs } from "@/lib/forfaits";
@@ -44,6 +45,8 @@ function Page() {
   const k = hydrated ? roleToKey(getSession()?.user.role) : null;
   const spec = k === "creche" || k === "rsai" ? specs.aboEtab : specs.aboMe;
   const [portalBusy, setPortalBusy] = useState(false);
+  const [annulation, setAnnulation] = useState(false);
+  const qc = useQueryClient();
   const navigate = useNavigate();
   const tarifs = useApiOrDemo<unknown>(specs.tarifsAll, demoTarifs);
   const offres = forfaitsPourRole(toList(tarifs.data), k);
@@ -73,6 +76,19 @@ function Page() {
       toast.error(e instanceof Error ? e.message : "Portail indisponible.");
     } finally { setPortalBusy(false); }
   }
+
+  async function annulerPaiement() {
+    const id = abonnement.data?.id ?? abonnement.data?._id;
+    if (!id) return;
+    setAnnulation(true);
+    try {
+      await send("POST", specs.paiementAbandonner.path, { abonnementId: id });
+      toast.success("Paiement en attente annulé. Vous pouvez choisir une autre formule.");
+      await qc.invalidateQueries({ queryKey: ["api", spec.id] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Annulation impossible.");
+    } finally { setAnnulation(false); }
+  }
   return (
     <DashboardShell title="Mon abonnement">
       <DataPanel title="Formule" icon={CreditCard} spec={spec} demoData={demo}>
@@ -83,7 +99,12 @@ function Page() {
           return (
             <div className="space-y-6">
               {a.statut === "en_attente" && (
-                <p className="rounded-lg bg-warning/15 p-3 text-sm">Paiement en attente : choisissez votre formule ci-dessous pour le finaliser.</p>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-warning/15 p-3 text-sm">
+                  <span>Paiement en attente : choisissez votre formule ci-dessous pour le finaliser.</span>
+                  <Button size="sm" variant="outline" disabled={annulation} onClick={annulerPaiement}>
+                    {annulation && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}Annuler le paiement
+                  </Button>
+                </div>
               )}
               {a.statut === "essai" && (
                 <p className="rounded-lg bg-success/10 p-3 text-sm text-success">

@@ -244,6 +244,15 @@ function Page() {
     setDone(true);
   };
 
+  async function annulerEtChoisir() {
+    try {
+      if (intent?.abonnementId) {
+        await send("POST", specs.paiementAbandonner.path, { abonnementId: intent.abonnementId });
+      }
+    } catch { /* l'abandon sera réessayé au prochain choix */ }
+    void navigate({ to: "/abonnement" });
+  }
+
   const returnUrl = useMemo(() => {
     if (typeof window === "undefined" || !intent) return "";
     const u = new URL("/abonnement/paiement", window.location.origin);
@@ -275,9 +284,20 @@ function Page() {
           <Link to="/abonnement" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />Mon abonnement
           </Link>
-          <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-success" />Paiement sécurisé
-          </span>
+          <div className="flex items-center gap-4">
+            {!done && !chargement && (
+              <button
+                type="button"
+                onClick={() => void annulerEtChoisir()}
+                className="text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
+              >
+                Annuler et choisir une autre formule
+              </button>
+            )}
+            <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-success" />Paiement sécurisé
+            </span>
+          </div>
         </div>
 
         <Steps />
