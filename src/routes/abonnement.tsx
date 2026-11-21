@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CreditCard, Receipt, CalendarClock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
@@ -9,8 +9,6 @@ import { specs } from "@/lib/specs";
 import { getSession, roleToKey } from "@/lib/api";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { StripeCheckout } from "@/components/dash/stripe";
 import { useApiOrDemo } from "@/lib/use-api";
 import { toList } from "@/lib/api";
 import { forfaitsPourRole, demoTarifs } from "@/lib/forfaits";
@@ -45,18 +43,16 @@ function Page() {
   const hydrated = useHydrated();
   const k = hydrated ? roleToKey(getSession()?.user.role) : null;
   const spec = k === "creche" || k === "rsai" ? specs.aboEtab : specs.aboMe;
-  const [choix, setChoix] = useState<string | null>(null);
-  const [actuel, setActuel] = useState<string | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
-  const qc = useQueryClient();
+  const navigate = useNavigate();
   const tarifs = useApiOrDemo<unknown>(specs.tarifsAll, demoTarifs);
   const offres = forfaitsPourRole(toList(tarifs.data), k);
-
-  const rafraichir = () => { void qc.invalidateQueries({ queryKey: ["api", spec.id] }); };
+  const abonnement = useApiOrDemo<any>(spec, demo);
+  const planActuel: string | null = abonnement.data?.plan ?? abonnement.data?.tarif?.nom ?? null;
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("paiement");
-    if (p === "ok") toast.success("Paiement confirmé — votre abonnement sera actif dans quelques instants.");
+    if (p === "ok") toast.success("Paiement confirmé — votre abonnement est actif.");
     if (p === "annule") toast.info("Paiement annulé.");
   }, []);
 
@@ -82,7 +78,7 @@ function Page() {
             <div className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="font-display text-3xl font-semibold capitalize">{actuel ?? a.plan ?? a.tarif?.nom ?? "—"}</p>
+                  <p className="font-display text-3xl font-semibold capitalize">{a.plan ?? a.tarif?.nom ?? "—"}</p>
                   <p className="text-muted-foreground">{a.prixMensuel ?? a.tarif?.prixMensuel ?? "—"} € / mois</p>
                 </div>
                 <Pill tone={a.statut === "actif" ? "success" : "warning"}>{a.statut}</Pill>
@@ -109,17 +105,21 @@ function Page() {
         <h2 className="mb-3 font-display text-xl font-semibold">Changer de formule</h2>
         <div className="grid gap-4 md:grid-cols-3">
           {offres.length === 0 && <p className="text-sm text-muted-foreground">Aucun forfait n'est proposé pour votre rôle pour le moment.</p>}
-          {offres.map((p) => (
-            <div key={p.id} className={`rounded-2xl border bg-card p-5 ${p.id === actuel ? "ring-2 ring-primary" : ""}`}>
-              <p className="font-display text-xl font-semibold">{p.nom}</p>
-              <p className="mb-3 text-2xl font-bold">{p.prix} €<span className="text-sm font-normal text-muted-foreground"> / mois</span></p>
-              <ul className="mb-4 space-y-1 text-sm text-muted-foreground">{p.inclus.map((x) => <li key={x}>✓ {x}</li>)}</ul>
-              {p.id === actuel ? <Pill tone="success">Formule actuelle</Pill> : <Button className="w-full" onClick={() => setChoix(p.id)}>Choisir {p.nom}</Button>}
-            </div>
-          ))}
+          {offres.map((p) => {
+            const courant = planActuel === p.nom || planActuel === p.id;
+            return (
+              <div key={p.id} className={`rounded-2xl border bg-card p-5 ${courant ? "ring-2 ring-primary" : ""}`}>
+                <p className="font-display text-xl font-semibold">{p.nom}</p>
+                <p className="mb-3 text-2xl font-bold">{p.prix} €<span className="text-sm font-normal text-muted-foreground"> / mois</span></p>
+                <ul className="mb-4 space-y-1 text-sm text-muted-foreground">{p.inclus.map((x) => <li key={x}>✓ {x}</li>)}</ul>
+                {courant
+                  ? <Pill tone="success">Formule actuelle</Pill>
+                  : <Button className="w-full" onClick={() => navigate({ to: "/abonnement/paiement", search: { plan: p.id, nom: p.nom, periodicite: "mensuel" } })}>Choisir {p.nom}</Button>}
+              </div>
+            );
+          })}
         </div>
       </div>
-      <StripeCheckout plan={choix} catalog={offres} onClose={() => setChoix(null)} onPaid={(id) => { setActuel(id); rafraichir(); window.setTimeout(rafraichir, 3000); }} />
     </DashboardShell>
   );
 }

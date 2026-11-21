@@ -92,9 +92,11 @@ const groups: Group[] = [
 const LECTURE_SEULE = ["DATABASE_URL", "JWT_SECRET", "PORT", "UPLOAD_DIR", "NODE_ENV", "SEED_PASSWORD", "SEED_PHONE"];
 
 const STRIPE_EVENTS = [
-  { id: "checkout.session.completed", label: "Paiement réussi → active l'abonnement" },
+  { id: "invoice.payment_succeeded", label: "Paiement réussi (initial ou renouvellement) → abonnement actif" },
+  { id: "invoice.payment_failed", label: "Échec de paiement → abonnement suspendu" },
+  { id: "customer.subscription.updated", label: "Changement de formule/période → statut et échéance synchronisés" },
   { id: "customer.subscription.deleted", label: "Abonnement résilié → statut « résilié »" },
-  { id: "invoice.payment_failed", label: "Échec de paiement → statut « suspendu »" },
+  { id: "checkout.session.completed", label: "Ancien parcours Stripe hébergé (repli) → active l'abonnement" },
 ];
 
 const demo: Record<string, unknown> = {
@@ -286,8 +288,8 @@ function Page() {
           <Panel title="Configurer le webhook dans Stripe" icon={Link2}>
             <div className="space-y-4 text-sm">
               <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Paiement embarqué</p>
-                <p>Avec la <strong>clé publique</strong>, le formulaire Stripe s'affiche directement dans la page « Mon abonnement », sans quitter votre domaine. Sans clé publique, repli automatique sur la page Stripe hébergée.</p>
+                <p className="font-medium text-foreground">Page de paiement intégrée</p>
+                <p>Avec la <strong>clé publique</strong>, le formulaire Stripe (Payment Element) s'affiche directement dans une page Kids'Med dédiée, sans redirection ni iframe de page. Sans clé publique, le paiement est indisponible et un message explicite est affiché.</p>
               </div>
               <div className="space-y-1">
                 <p className="font-medium">1. Adresse du point de terminaison</p>
