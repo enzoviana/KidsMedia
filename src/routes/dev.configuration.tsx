@@ -181,7 +181,7 @@ function Page() {
       ? r.data["_lectureSeule"]
       : LECTURE_SEULE.map((key) => ({ key, configure: false }));
 
-  const publicUrl = String(r.data?.["PUBLIC_URL"] ?? "").replace(/\/+$/, "").replace(/\/api$/, "");
+  const publicUrl = String(v["PUBLIC_URL"] ?? r.data?.["PUBLIC_URL"] ?? "").replace(/\/+$/, "").replace(/\/api$/, "");
   const webhookUrl = `${publicUrl || apiRoot}/api/webhooks/stripe`;
 
   const champs = (g: Group) => (
@@ -290,12 +290,12 @@ function Page() {
                   <Input readOnly value={webhookUrl} className="font-mono text-xs" aria-label="URL du webhook Stripe" />
                   <Button size="sm" variant="outline" onClick={() => copy(webhookUrl, "URL du webhook")}><Copy className="mr-1 h-3.5 w-3.5" />Copier</Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Stripe → Développeurs → Webhooks → « Ajouter un point de terminaison ». L'URL pointe vers l'API, pas vers le front. Version d'API : laisser celle proposée.</p>
+                <p className="text-xs text-muted-foreground">Stripe → Développeurs → Webhooks → « Ajouter un point de terminaison ». L'URL pointe vers l'API, pas vers le front. Version d'API : laisser celle proposée. Si l'URL affichée est incorrecte, corrigez <code>PUBLIC_URL</code> dans l'onglet « Application & liens ».</p>
               </div>
 
               <div className="space-y-1">
                 <p className="font-medium">2. Événements à écouter</p>
-                <p className="text-xs text-muted-foreground">Choisissez « Sélectionner des événements » et cochez uniquement :</p>
+                <p className="text-xs text-muted-foreground">Choisissez « Sélectionner des événements » (et non « Tous les événements ») puis cochez uniquement :</p>
                 <ul className="space-y-1">
                   {STRIPE_EVENTS.map((ev) => (
                     <li key={ev.id} className="flex items-start gap-2">
