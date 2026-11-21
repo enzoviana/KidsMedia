@@ -112,7 +112,7 @@ export function StripeCheckout({ plan, catalog, onClose, onPaid }: { plan: strin
     try {
       const s = getSession();
       if (s && !s.demo && specs.stripeCheckout.status === "ok") {
-        const r = await send<ReponseCheckout>("POST", specs.stripeCheckout.path, { plan: p.id, periodicite: "mensuel", embedded });
+        const r = await send<ReponseCheckout>("POST", specs.stripeCheckout.path, { plan: p.nom, tarifId: p.id, periodicite: "mensuel", embedded });
         const d = r.data ?? {};
         if (embedded && d.clientSecret && d.publishableKey) {
           setEmbed({ clientSecret: d.clientSecret, publishableKey: d.publishableKey });
