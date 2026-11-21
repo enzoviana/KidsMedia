@@ -36,6 +36,10 @@ type Intent = {
   devise: string;
   plan: string;
   statut: string;
+  mode?: "setup" | "payment";
+  setupIntentId?: string;
+  joursEssai?: number;
+  prixMensuel?: number;
 };
 
 /** Couleur d'accent Stripe alignée sur le thème du rôle (les tokens sont en oklch). */
@@ -73,7 +77,7 @@ function appearance(primary: string): NonNullable<StripeElementsOptions["appeara
 }
 
 /** Étape 2 : formulaire Stripe natif (Payment Element), sans iframe de page. */
-function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; returnUrl: string; onSuccess: () => void }) {
+function PaymentForm({ montant, returnUrl, mode, onSuccess }: { montant: number; returnUrl: string; mode: "setup" | "payment"; onSuccess: (setupIntentId?: string) => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [busy, setBusy] = useState(false);
@@ -84,6 +88,27 @@ function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; retur
     if (!stripe || !elements) return;
     setBusy(true);
     setMessage(null);
+
+    if (mode === "setup") {
+      const { error, setupIntent } = await stripe.confirmSetup({
+        elements,
+        confirmParams: { return_url: returnUrl },
+        redirect: "if_required",
+      });
+      if (error) {
+        setMessage(error.message ?? "La carte a été refusée.");
+        setBusy(false);
+        return;
+      }
+      if (setupIntent && setupIntent.status === "succeeded") {
+        onSuccess(setupIntent.id);
+        return;
+      }
+      setMessage("La carte n'a pas pu être enregistrée. Vous pouvez réessayer.");
+      setBusy(false);
+      return;
+    }
+
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url: returnUrl },
@@ -112,10 +137,12 @@ function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; retur
       )}
       <Button type="submit" size="lg" disabled={!stripe || busy} className="h-12 w-full rounded-xl text-base font-semibold shadow-sm">
         {busy ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
-        Payer {euros(montant)}
+        {mode === "setup" ? "Démarrer l'essai gratuit" : `Payer ${euros(montant)}`}
       </Button>
       <p className="text-center text-xs text-muted-foreground">
-        Paiement chiffré et traité par Stripe. Aucune donnée bancaire ne transite par Kids'Med.
+        {mode === "setup"
+          ? "Aucun débit aujourd'hui. Votre carte est enregistrée pour la fin de l'essai."
+          : "Paiement chiffré et traité par Stripe. Aucune donnée bancaire ne transite par Kids'Med."}
       </p>
     </form>
   );
@@ -150,6 +177,7 @@ function Page() {
   const [chargement, setChargement] = useState(true);
   const [demo, setDemo] = useState(false);
   const [done, setDone] = useState(false);
+  const [resultat, setResultat] = useState<{ essai?: number; dateFin?: string } | null>(null);
   const demande = useRef(false);
 
   useEffect(() => {
@@ -161,12 +189,18 @@ function Page() {
     const params = new URLSearchParams(window.location.search);
     const statutRedirection = params.get("redirect_status");
     const aboRedirige = params.get("abo");
+    const setupRedirige = params.get("setup_intent");
 
     if (statutRedirection) {
       if (statutRedirection === "succeeded" && aboRedirige) {
         void (async () => {
-          try { await send("POST", specs.paiementFinaliser.path, { abonnementId: aboRedirige }); }
-          catch { /* le webhook reste la source de vérité */ }
+          try {
+            const r = await send<{ essai?: number; dateFin?: string }>("POST", specs.paiementFinaliser.path, {
+              abonnementId: aboRedirige,
+              ...(setupRedirige ? { setupIntentId: setupRedirige } : {}),
+            });
+            setResultat(r.data ?? null);
+          } catch { /* le webhook reste la source de vérité */ }
           setDone(true);
           setChargement(false);
         })();
@@ -197,9 +231,15 @@ function Page() {
     })();
   }, [hydrated, navigate, plan, nom, periodicite, offre?.nom]);
 
-  const finaliser = async () => {
+  const finaliser = async (setupIntentId?: string) => {
     try {
-      if (intent?.abonnementId) await send("POST", specs.paiementFinaliser.path, { abonnementId: intent.abonnementId });
+      if (intent?.abonnementId) {
+        const r = await send<{ essai?: number; dateFin?: string }>("POST", specs.paiementFinaliser.path, {
+          abonnementId: intent.abonnementId,
+          ...(setupIntentId ? { setupIntentId } : {}),
+        });
+        setResultat(r.data ?? null);
+      }
     } catch { /* le webhook active l'abonnement */ }
     setDone(true);
   };
@@ -222,6 +262,10 @@ function Page() {
 
   const nomForfait = intent?.plan ?? offre?.nom ?? nom ?? "Votre formule";
   const montant = intent?.montant ?? (offre ? Math.round(offre.prix * 100) : 0);
+  const joursEssai = intent?.joursEssai ?? offre?.joursEssai ?? 0;
+  const modeEssai = joursEssai > 0 && (!intent || intent.mode === "setup");
+  const prixMensuel = intent?.prixMensuel ?? offre?.prix ?? 0;
+  const montantAffiche = modeEssai ? 0 : montant;
   const avantages = offre?.inclus?.length ? offre.inclus : ["Dossiers médicaux centralisés", "Transmissions et suivi quotidien", "Support réactif"];
 
   return (
@@ -250,11 +294,14 @@ function Page() {
               <div className="bg-gradient-to-br from-primary to-primary/70 p-6 text-primary-foreground">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium"><Sparkles className="h-3.5 w-3.5" />Kids'Med IA</span>
-                  <span className="text-xs text-primary-foreground/80">Sans engagement</span>
+                  <span className="text-xs text-primary-foreground/80">{modeEssai ? `${joursEssai} jours d'essai` : "Sans engagement"}</span>
                 </div>
                 <p className="mt-5 text-sm text-primary-foreground/80">Votre formule</p>
                 <p className="text-2xl font-semibold">{nomForfait}</p>
-                <p className="mt-1 text-3xl font-bold">{euros(montant)}<span className="ml-1 text-sm font-normal text-primary-foreground/80">/ {periodicite === "annuel" ? "an" : "mois"}</span></p>
+                <p className="mt-1 text-3xl font-bold">{euros(montantAffiche)}<span className="ml-1 text-sm font-normal text-primary-foreground/80">/ {periodicite === "annuel" ? "an" : "mois"}</span></p>
+                {modeEssai && (
+                  <p className="mt-1 text-xs text-primary-foreground/80">Puis {euros(prixMensuel * 100)} / mois après {joursEssai} jours d'essai gratuit.</p>
+                )}
               </div>
               <div className="space-y-4 p-6">
                 <ul className="space-y-2 text-sm text-card-foreground">
@@ -264,7 +311,7 @@ function Page() {
                 </ul>
                 <div className="flex items-center justify-between border-t pt-4 text-sm">
                   <span className="text-muted-foreground">Total aujourd'hui</span>
-                  <span className="font-semibold">{euros(montant)}</span>
+                  <span className="font-semibold">{euros(montantAffiche)}</span>
                 </div>
                 <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
                   <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" />Chiffré</span>
@@ -292,25 +339,42 @@ function Page() {
               ) : done ? (
                 <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
                   <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Check className="h-8 w-8" /></span>
-                  <p className="text-2xl font-semibold">Paiement confirmé</p>
-                  <p className="max-w-sm text-sm text-muted-foreground">Votre formule <strong>{nomForfait}</strong> est active. Merci de votre confiance.</p>
+                  <p className="text-2xl font-semibold">{resultat?.essai ? "Essai activé" : "Paiement confirmé"}</p>
+                  {resultat?.essai ? (
+                    <p className="max-w-sm text-sm text-muted-foreground">
+                      Votre essai gratuit de <strong>{resultat.essai} jours</strong> est actif.
+                      {resultat.dateFin ? ` Première facturation le ${new Date(resultat.dateFin).toLocaleDateString("fr-FR")}.` : ""}
+                    </p>
+                  ) : (
+                    <p className="max-w-sm text-sm text-muted-foreground">Votre formule <strong>{nomForfait}</strong> est active. Merci de votre confiance.</p>
+                  )}
                   <Button asChild className="mt-2"><Link to="/abonnement">Voir mon abonnement</Link></Button>
                 </div>
               ) : demo ? (
                 <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
                   <CreditCard className="h-9 w-9 text-primary" />
                   <p className="text-lg font-semibold">Mode démonstration</p>
-                  <p className="max-w-sm text-sm text-muted-foreground">Aucun paiement réel ne sera effectué.</p>
-                  <Button onClick={() => setDone(true)}>Simuler le paiement</Button>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    {offre && offre.joursEssai > 0
+                      ? `Essai de ${offre.joursEssai} jours — aucun paiement réel ne sera effectué.`
+                      : "Aucun paiement réel ne sera effectué."}
+                  </p>
+                  <Button onClick={() => { setResultat(offre && offre.joursEssai > 0 ? { essai: offre.joursEssai } : null); setDone(true); }}>
+                    {offre && offre.joursEssai > 0 ? "Démarrer l'essai (démo)" : "Simuler le paiement"}
+                  </Button>
                 </div>
               ) : elementsOptions && stripePromise ? (
                 <>
                   <div className="mb-5">
-                    <h2 className="text-lg font-semibold">Informations de paiement</h2>
-                    <p className="text-sm text-muted-foreground">Carte bancaire, SEPA ou portefeuille selon votre pays.</p>
+                    <h2 className="text-lg font-semibold">{modeEssai ? "Enregistrer ma carte" : "Informations de paiement"}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {modeEssai
+                        ? `Carte bancaire — aucun débit aujourd'hui, premier prélèvement après ${joursEssai} jours.`
+                        : "Carte bancaire, SEPA ou portefeuille selon votre pays."}
+                    </p>
                   </div>
                   <Elements stripe={stripePromise} options={elementsOptions}>
-                    <PaymentForm montant={montant} returnUrl={returnUrl} onSuccess={() => void finaliser()} />
+                    <PaymentForm montant={montant} returnUrl={returnUrl} mode={modeEssai ? "setup" : "payment"} onSuccess={finaliser} />
                   </Elements>
                 </>
               ) : (

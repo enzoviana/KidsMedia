@@ -85,6 +85,11 @@ function Page() {
               {a.statut === "en_attente" && (
                 <p className="rounded-lg bg-warning/15 p-3 text-sm">Paiement en attente : choisissez votre formule ci-dessous pour le finaliser.</p>
               )}
+              {a.statut === "essai" && (
+                <p className="rounded-lg bg-success/10 p-3 text-sm text-success">
+                  Essai gratuit en cours{a.dateFin ? ` jusqu'au ${fmtDate(a.dateFin)}` : ""}. La facturation démarre à la fin de l'essai.
+                </p>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="font-display text-3xl font-semibold capitalize">{a.plan ?? a.tarif?.nom ?? "—"}</p>
@@ -120,6 +125,7 @@ function Page() {
               <div key={p.id} className={`rounded-2xl border bg-card p-5 ${courant ? "ring-2 ring-primary" : ""}`}>
                 <p className="font-display text-xl font-semibold">{p.nom}</p>
                 <p className="mb-3 text-2xl font-bold">{p.prix} €<span className="text-sm font-normal text-muted-foreground"> / mois</span></p>
+                {p.joursEssai > 0 && <p className="mb-2 text-xs font-medium text-success">{p.joursEssai} jours d'essai gratuit</p>}
                 <ul className="mb-4 space-y-1 text-sm text-muted-foreground">{p.inclus.map((x) => <li key={x}>✓ {x}</li>)}</ul>
                 {courant
                   ? <Pill tone="success">Formule actuelle</Pill>
