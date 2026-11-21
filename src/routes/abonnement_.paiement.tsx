@@ -3,9 +3,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { ArrowLeft, BadgeCheck, Check, CreditCard, Loader2, Lock, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { DashboardShell } from "@/components/dash/shell";
 import { Button } from "@/components/ui/button";
 import { specs } from "@/lib/specs";
-import { getSession, roleToKey, toList } from "@/lib/api";
+import { getSession, roleToKey, toList, type RoleKey } from "@/lib/api";
 import { send } from "@/lib/mutate";
 import { useApiOrDemo } from "@/lib/use-api";
 import { forfaitsPourRole, demoTarifs } from "@/lib/forfaits";
@@ -37,27 +38,39 @@ type Intent = {
   statut: string;
 };
 
+/** Couleur d'accent Stripe alignée sur le thème du rôle (les tokens sont en oklch). */
+const ACCENTS: Record<RoleKey, string> = {
+  creche: "#2f9e5f",
+  rsai: "#2f7dd1",
+  medecin: "#d6417f",
+  parent: "#e07a2b",
+  admin: "#3b4252",
+  dev: "#3d8f87",
+};
+
 const euros = (centimes: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format((centimes || 0) / 100);
 
-const APPEARANCE: NonNullable<StripeElementsOptions["appearance"]> = {
-  theme: "stripe",
-  variables: {
-    colorPrimary: "#4f46e5",
-    colorBackground: "#ffffff",
-    colorText: "#0f172a",
-    colorTextSecondary: "#64748b",
-    colorDanger: "#dc2626",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-    borderRadius: "12px",
-    spacingUnit: "5px",
-  },
-  rules: {
-    ".Input": { boxShadow: "0 0 0 1px #e2e8f0", padding: "12px" },
-    ".Input:focus": { boxShadow: "0 0 0 2px #6366f1" },
-    ".Label": { fontWeight: "500", color: "#334155" },
-  },
-};
+function appearance(primary: string): NonNullable<StripeElementsOptions["appearance"]> {
+  return {
+    theme: "stripe",
+    variables: {
+      colorPrimary: primary,
+      colorBackground: "#ffffff",
+      colorText: "#1f2937",
+      colorTextSecondary: "#6b7280",
+      colorDanger: "#dc2626",
+      fontFamily: "Figtree, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+      borderRadius: "12px",
+      spacingUnit: "5px",
+    },
+    rules: {
+      ".Input": { boxShadow: "0 0 0 1px #e5e7eb", padding: "12px" },
+      ".Input:focus": { boxShadow: `0 0 0 2px ${primary}` },
+      ".Label": { fontWeight: "500", color: "#374151" },
+    },
+  };
+}
 
 /** Étape 2 : formulaire Stripe natif (Payment Element), sans iframe de page. */
 function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; returnUrl: string; onSuccess: () => void }) {
@@ -93,15 +106,15 @@ function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; retur
     <form onSubmit={submit} className="space-y-5">
       <PaymentElement options={{ layout: "tabs" }} />
       {message && (
-        <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />{message}
         </p>
       )}
-      <Button type="submit" size="lg" disabled={!stripe || busy} className="h-12 w-full rounded-xl text-base font-semibold shadow-lg shadow-indigo-500/20">
+      <Button type="submit" size="lg" disabled={!stripe || busy} className="h-12 w-full rounded-xl text-base font-semibold shadow-sm">
         {busy ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
         Payer {euros(montant)}
       </Button>
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-muted-foreground">
         Paiement chiffré et traité par Stripe. Aucune donnée bancaire ne transite par Kids'Med.
       </p>
     </form>
@@ -110,12 +123,12 @@ function PaymentForm({ montant, returnUrl, onSuccess }: { montant: number; retur
 
 function Steps() {
   return (
-    <ol className="mb-8 flex items-center gap-2 text-xs font-medium text-slate-500">
-      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white"><Check className="h-3.5 w-3.5" /></span>Formule</li>
-      <li className="h-px flex-1 bg-slate-200" />
-      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white">2</span>Paiement</li>
-      <li className="h-px flex-1 bg-slate-200" />
-      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300">3</span>Confirmation</li>
+    <ol className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-success text-white"><Check className="h-3.5 w-3.5" /></span>Formule</li>
+      <li className="h-px flex-1 bg-border" />
+      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">2</span><span className="text-foreground">Paiement</span></li>
+      <li className="h-px flex-1 bg-border" />
+      <li className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full border border-border">3</span>Confirmation</li>
     </ol>
   );
 }
@@ -126,6 +139,7 @@ function Page() {
   const hydrated = useHydrated();
   const session = hydrated ? getSession() : null;
   const role = roleToKey(session?.user.role);
+  const accent = ACCENTS[role ?? "creche"];
 
   const tarifs = useApiOrDemo<unknown>(specs.tarifsAll, demoTarifs);
   const offres = useMemo(() => forfaitsPourRole(toList(tarifs.data), role), [tarifs.data, role]);
@@ -202,8 +216,8 @@ function Page() {
 
   const stripePromise = useMemo(() => (intent?.publishableKey ? loadStripe(intent.publishableKey) : null), [intent?.publishableKey]);
   const elementsOptions = useMemo<StripeElementsOptions | null>(
-    () => (intent?.clientSecret ? { clientSecret: intent.clientSecret, appearance: APPEARANCE, locale: "fr" } : null),
-    [intent?.clientSecret],
+    () => (intent?.clientSecret ? { clientSecret: intent.clientSecret, appearance: appearance(accent), locale: "fr" } : null),
+    [intent?.clientSecret, accent],
   );
 
   const nomForfait = intent?.plan ?? offre?.nom ?? nom ?? "Votre formule";
@@ -211,102 +225,107 @@ function Page() {
   const avantages = offre?.inclus?.length ? offre.inclus : ["Dossiers médicaux centralisés", "Transmissions et suivi quotidien", "Support réactif"];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(99,102,241,0.14),_transparent_60%)]">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
-        <Link to="/abonnement" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900">
-          <ArrowLeft className="h-4 w-4" />Mon abonnement
-        </Link>
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          <ShieldCheck className="h-4 w-4 text-emerald-600" />Paiement sécurisé
+    <DashboardShell title="Paiement" role={role ?? undefined}>
+      <div className="mx-auto max-w-6xl space-y-6 pb-10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link to="/abonnement" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />Mon abonnement
+          </Link>
+          <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <ShieldCheck className="h-4 w-4 text-success" />Paiement sécurisé
+          </span>
         </div>
-      </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 pb-16 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
-        <section className="order-2 lg:order-1">
-          <Steps />
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Finalisation</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Activez votre formule en quelques secondes.</h1>
-          <p className="mt-3 max-w-md text-sm text-slate-600">Un paiement unique, un abonnement mensuel, résiliable à tout moment. Vos données restent hébergées en Europe.</p>
+        <Steps />
 
-          <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
-            <div className="bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 p-6 text-white">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur"><Sparkles className="h-3.5 w-3.5" />Kids'Med IA</span>
-                <span className="text-xs text-white/80">Sans engagement</span>
-              </div>
-              <p className="mt-5 text-sm text-white/80">Votre formule</p>
-              <p className="text-2xl font-semibold">{nomForfait}</p>
-              <p className="mt-1 text-3xl font-bold">{euros(montant)}<span className="ml-1 text-sm font-normal text-white/80">/ {periodicite === "annuel" ? "an" : "mois"}</span></p>
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr] lg:gap-8">
+          <section className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Finalisation</p>
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Activez votre formule en quelques secondes.</h1>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">Un paiement unique, un abonnement mensuel, résiliable à tout moment. Vos données restent hébergées en Europe.</p>
             </div>
-            <div className="space-y-4 p-6">
-              <ul className="space-y-2 text-sm text-slate-700">
-                {avantages.map((a) => (
-                  <li key={a} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{a}</li>
-                ))}
-              </ul>
-              <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
-                <span className="text-slate-500">Total aujourd'hui</span>
-                <span className="font-semibold text-slate-900">{euros(montant)}</span>
-              </div>
-              <div className="grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
-                <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-emerald-600" />Chiffré</span>
-                <span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />PCI-DSS</span>
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />RGPD</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="order-1 lg:order-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl shadow-indigo-200/40 sm:p-8">
-            {chargement ? (
-              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-slate-500">
-                <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
-                <p className="text-sm">Préparation du paiement sécurisé…</p>
-              </div>
-            ) : erreur ? (
-              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
-                <XCircle className="h-9 w-9 text-red-500" />
-                <p className="text-lg font-semibold">Paiement indisponible</p>
-                <p className="max-w-sm text-sm text-slate-500">{erreur}</p>
-                <Button asChild variant="outline"><Link to="/abonnement">Revenir aux formules</Link></Button>
-              </div>
-            ) : done ? (
-              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Check className="h-8 w-8" /></span>
-                <p className="text-2xl font-semibold">Paiement confirmé</p>
-                <p className="max-w-sm text-sm text-slate-500">Votre formule <strong>{nomForfait}</strong> est active. Merci de votre confiance.</p>
-                <Button asChild className="mt-2"><Link to="/abonnement">Voir mon abonnement</Link></Button>
-              </div>
-            ) : demo ? (
-              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
-                <CreditCard className="h-9 w-9 text-indigo-600" />
-                <p className="text-lg font-semibold">Mode démonstration</p>
-                <p className="max-w-sm text-sm text-slate-500">Aucun paiement réel ne sera effectué.</p>
-                <Button onClick={() => setDone(true)}>Simuler le paiement</Button>
-              </div>
-            ) : elementsOptions && stripePromise ? (
-              <>
-                <div className="mb-5">
-                  <h2 className="text-lg font-semibold">Informations de paiement</h2>
-                  <p className="text-sm text-slate-500">Carte bancaire, SEPA ou portefeuille selon votre pays.</p>
+            <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+              <div className="bg-gradient-to-br from-primary to-primary/70 p-6 text-primary-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium"><Sparkles className="h-3.5 w-3.5" />Kids'Med IA</span>
+                  <span className="text-xs text-primary-foreground/80">Sans engagement</span>
                 </div>
-                <Elements stripe={stripePromise} options={elementsOptions}>
-                  <PaymentForm montant={montant} returnUrl={returnUrl} onSuccess={() => void finaliser()} />
-                </Elements>
-              </>
-            ) : (
-              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
-                <CreditCard className="h-9 w-9 text-indigo-600" />
-                <p className="text-lg font-semibold">Aucun moyen de paiement requis</p>
-                <p className="text-sm text-slate-500">Votre formule est déjà active.</p>
-                <Button asChild><Link to="/abonnement">Voir mon abonnement</Link></Button>
+                <p className="mt-5 text-sm text-primary-foreground/80">Votre formule</p>
+                <p className="text-2xl font-semibold">{nomForfait}</p>
+                <p className="mt-1 text-3xl font-bold">{euros(montant)}<span className="ml-1 text-sm font-normal text-primary-foreground/80">/ {periodicite === "annuel" ? "an" : "mois"}</span></p>
               </div>
-            )}
-          </div>
-          <p className="mt-4 text-center text-xs text-slate-500">En validant, vous acceptez les conditions d'abonnement Kids'Med IA.</p>
-        </section>
-      </main>
-    </div>
+              <div className="space-y-4 p-6">
+                <ul className="space-y-2 text-sm text-card-foreground">
+                  {avantages.map((a) => (
+                    <li key={a} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />{a}</li>
+                  ))}
+                </ul>
+                <div className="flex items-center justify-between border-t pt-4 text-sm">
+                  <span className="text-muted-foreground">Total aujourd'hui</span>
+                  <span className="font-semibold">{euros(montant)}</span>
+                </div>
+                <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                  <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" />Chiffré</span>
+                  <span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-success" />PCI-DSS</span>
+                  <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-success" />RGPD</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
+              {chargement ? (
+                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <p className="text-sm">Préparation du paiement sécurisé…</p>
+                </div>
+              ) : erreur ? (
+                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
+                  <XCircle className="h-9 w-9 text-destructive" />
+                  <p className="text-lg font-semibold">Paiement indisponible</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">{erreur}</p>
+                  <Button asChild variant="outline"><Link to="/abonnement">Revenir aux formules</Link></Button>
+                </div>
+              ) : done ? (
+                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Check className="h-8 w-8" /></span>
+                  <p className="text-2xl font-semibold">Paiement confirmé</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">Votre formule <strong>{nomForfait}</strong> est active. Merci de votre confiance.</p>
+                  <Button asChild className="mt-2"><Link to="/abonnement">Voir mon abonnement</Link></Button>
+                </div>
+              ) : demo ? (
+                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
+                  <CreditCard className="h-9 w-9 text-primary" />
+                  <p className="text-lg font-semibold">Mode démonstration</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">Aucun paiement réel ne sera effectué.</p>
+                  <Button onClick={() => setDone(true)}>Simuler le paiement</Button>
+                </div>
+              ) : elementsOptions && stripePromise ? (
+                <>
+                  <div className="mb-5">
+                    <h2 className="text-lg font-semibold">Informations de paiement</h2>
+                    <p className="text-sm text-muted-foreground">Carte bancaire, SEPA ou portefeuille selon votre pays.</p>
+                  </div>
+                  <Elements stripe={stripePromise} options={elementsOptions}>
+                    <PaymentForm montant={montant} returnUrl={returnUrl} onSuccess={() => void finaliser()} />
+                  </Elements>
+                </>
+              ) : (
+                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
+                  <CreditCard className="h-9 w-9 text-primary" />
+                  <p className="text-lg font-semibold">Aucun moyen de paiement requis</p>
+                  <p className="text-sm text-muted-foreground">Votre formule est déjà active.</p>
+                  <Button asChild><Link to="/abonnement">Voir mon abonnement</Link></Button>
+                </div>
+              )}
+            </div>
+            <p className="mt-4 text-center text-xs text-muted-foreground">En validant, vous acceptez les conditions d'abonnement Kids'Med IA.</p>
+          </section>
+        </div>
+      </div>
+    </DashboardShell>
   );
 }

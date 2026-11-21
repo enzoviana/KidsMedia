@@ -48,7 +48,12 @@ function Page() {
   const tarifs = useApiOrDemo<unknown>(specs.tarifsAll, demoTarifs);
   const offres = forfaitsPourRole(toList(tarifs.data), k);
   const abonnement = useApiOrDemo<any>(spec, demo);
-  const planActuel: string | null = abonnement.data?.plan ?? abonnement.data?.tarif?.nom ?? null;
+  const statutActuel: string | null = abonnement.data?.statut ?? null;
+  // Seul un abonnement réellement actif est présenté comme « formule actuelle ».
+  // Un paiement en attente ne doit jamais verrouiller la formule.
+  const planActuel: string | null = statutActuel === "actif" || statutActuel === "essai"
+    ? (abonnement.data?.plan ?? abonnement.data?.tarif?.nom ?? null)
+    : null;
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("paiement");
@@ -72,10 +77,14 @@ function Page() {
     <DashboardShell title="Mon abonnement">
       <DataPanel title="Formule" icon={CreditCard} spec={spec} demoData={demo}>
         {(a: any) => {
+          if (!a) return <p className="text-sm text-muted-foreground">Aucun abonnement actif. Choisissez une formule ci-dessous pour commencer.</p>;
           const q = a.quota ?? {};
           const pct = q.enfantsMax ? Math.round(((q.enfantsInscrits ?? 0) / q.enfantsMax) * 100) : 0;
           return (
             <div className="space-y-6">
+              {a.statut === "en_attente" && (
+                <p className="rounded-lg bg-warning/15 p-3 text-sm">Paiement en attente : choisissez votre formule ci-dessous pour le finaliser.</p>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="font-display text-3xl font-semibold capitalize">{a.plan ?? a.tarif?.nom ?? "—"}</p>
