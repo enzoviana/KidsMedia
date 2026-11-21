@@ -298,7 +298,10 @@ function Page() {
                 </div>
                 <p className="mt-5 text-sm text-primary-foreground/80">Votre formule</p>
                 <p className="text-2xl font-semibold">{nomForfait}</p>
-                <p className="mt-1 text-3xl font-bold">{euros(montantAffiche)}<span className="ml-1 text-sm font-normal text-primary-foreground/80">/ {periodicite === "annuel" ? "an" : "mois"}</span></p>
+                <p className="mt-1 text-3xl font-bold">
+                  {euros(montantAffiche)}
+                  {!modeEssai && <span className="ml-1 text-sm font-normal text-primary-foreground/80">/ {periodicite === "annuel" ? "an" : "mois"}</span>}
+                </p>
                 {modeEssai && (
                   <p className="mt-1 text-xs text-primary-foreground/80">Puis {euros(prixMensuel * 100)} / mois après {joursEssai} jours d'essai gratuit.</p>
                 )}
