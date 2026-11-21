@@ -37,7 +37,7 @@ import { Route as RsaiRouteImport } from './routes/rsai'
 import { Route as RsaiAnnuaireRouteImport } from './routes/rsai-annuaire'
 import { Route as SectionsRouteImport } from './routes/sections'
 import { Route as TransmissionsRouteImport } from './routes/transmissions'
-import { Route as AbonnementPaiementRouteImport } from './routes/abonnement.paiement'
+import { Route as AbonnementPaiementRouteImport } from './routes/abonnement_.paiement'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAbonnementsRouteImport } from './routes/admin.abonnements'
 import { Route as AdminLiaisonsRouteImport } from './routes/admin.liaisons'
@@ -204,9 +204,9 @@ const TransmissionsRoute = TransmissionsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AbonnementPaiementRoute = AbonnementPaiementRouteImport.update({
-  id: '/paiement',
-  path: '/paiement',
-  getParentRoute: () => AbonnementRoute,
+  id: '/abonnement_/paiement',
+  path: '/abonnement/paiement',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
@@ -332,7 +332,7 @@ const UrgenceCodeRoute = UrgenceCodeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/abonnement': typeof AbonnementRouteWithChildren
+  '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
@@ -387,7 +387,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/abonnement': typeof AbonnementRouteWithChildren
+  '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
@@ -443,7 +443,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/abonnement': typeof AbonnementRouteWithChildren
+  '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
@@ -470,7 +470,7 @@ export interface FileRoutesById {
   '/rsai-annuaire': typeof RsaiAnnuaireRoute
   '/sections': typeof SectionsRoute
   '/transmissions': typeof TransmissionsRoute
-  '/abonnement/paiement': typeof AbonnementPaiementRoute
+  '/abonnement_/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/liaisons': typeof AdminLiaisonsRoute
   '/admin/logs': typeof AdminLogsRoute
@@ -637,7 +637,7 @@ export interface FileRouteTypes {
     | '/rsai-annuaire'
     | '/sections'
     | '/transmissions'
-    | '/abonnement/paiement'
+    | '/abonnement_/paiement'
     | '/admin/abonnements'
     | '/admin/liaisons'
     | '/admin/logs'
@@ -666,7 +666,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AbonnementRoute: typeof AbonnementRouteWithChildren
+  AbonnementRoute: typeof AbonnementRoute
   AffectationsRoute: typeof AffectationsRoute
   AnalyseIaRoute: typeof AnalyseIaRoute
   AppRoute: typeof AppRoute
@@ -693,6 +693,7 @@ export interface RootRouteChildren {
   RsaiAnnuaireRoute: typeof RsaiAnnuaireRoute
   SectionsRoute: typeof SectionsRoute
   TransmissionsRoute: typeof TransmissionsRoute
+  AbonnementPaiementRoute: typeof AbonnementPaiementRoute
   AdminAbonnementsRoute: typeof AdminAbonnementsRoute
   AdminLiaisonsRoute: typeof AdminLiaisonsRoute
   AdminLogsRoute: typeof AdminLogsRoute
@@ -917,12 +918,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TransmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/abonnement/paiement': {
-      id: '/abonnement/paiement'
-      path: '/paiement'
+    '/abonnement_/paiement': {
+      id: '/abonnement_/paiement'
+      path: '/abonnement/paiement'
       fullPath: '/abonnement/paiement'
       preLoaderRoute: typeof AbonnementPaiementRouteImport
-      parentRoute: typeof AbonnementRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -1095,21 +1096,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AbonnementRouteChildren {
-  AbonnementPaiementRoute: typeof AbonnementPaiementRoute
-}
-
-const AbonnementRouteChildren: AbonnementRouteChildren = {
-  AbonnementPaiementRoute: AbonnementPaiementRoute,
-}
-
-const AbonnementRouteWithChildren = AbonnementRoute._addFileChildren(
-  AbonnementRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AbonnementRoute: AbonnementRouteWithChildren,
+  AbonnementRoute: AbonnementRoute,
   AffectationsRoute: AffectationsRoute,
   AnalyseIaRoute: AnalyseIaRoute,
   AppRoute: AppRoute,
@@ -1136,6 +1125,7 @@ const rootRouteChildren: RootRouteChildren = {
   RsaiAnnuaireRoute: RsaiAnnuaireRoute,
   SectionsRoute: SectionsRoute,
   TransmissionsRoute: TransmissionsRoute,
+  AbonnementPaiementRoute: AbonnementPaiementRoute,
   AdminAbonnementsRoute: AdminAbonnementsRoute,
   AdminLiaisonsRoute: AdminLiaisonsRoute,
   AdminLogsRoute: AdminLogsRoute,

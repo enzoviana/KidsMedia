@@ -11,7 +11,7 @@ import { useApiOrDemo } from "@/lib/use-api";
 import { forfaitsPourRole, demoTarifs } from "@/lib/forfaits";
 import { useHydrated } from "@/lib/use-hydrated";
 
-export const Route = createFileRoute("/abonnement/paiement")({
+export const Route = createFileRoute("/abonnement_/paiement")({
   validateSearch: (search: Record<string, unknown>) => ({
     plan: typeof search["plan"] === "string" ? search["plan"] : "",
     nom: typeof search["nom"] === "string" ? search["nom"] : "",
