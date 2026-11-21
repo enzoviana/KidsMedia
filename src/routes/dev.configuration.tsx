@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { KeyRound, Mail, MessageSquareText, MapPin, Save, Send } from "lucide-react";
+import { CheckCircle2, KeyRound, Loader2, Mail, MessageSquareText, MapPin, RefreshCw, Save, Send, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
 import { Panel } from "@/components/dash/widgets";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { specs } from "@/lib/specs";
 import { send } from "@/lib/mutate";
+import { apiFetch } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
 
 export const Route = createFileRoute("/dev/configuration")({
@@ -28,9 +29,15 @@ export const Route = createFileRoute("/dev/configuration")({
 type F = { key: string; label: string; secret?: boolean; long?: boolean; hint?: string };
 const groups: { title: string; icon: typeof Mail; fields: F[] }[] = [
   { title: "E-mails", icon: Mail, fields: [
-    { key: "EMAIL_PROVIDER", label: "Fournisseur", hint: "smtp ou sendgrid" },
-    { key: "SENDGRID_API_KEY", label: "Clé API SendGrid", secret: true },
-    { key: "EMAIL_FROM", label: "Adresse d'envoi", hint: "contact@kidsmed.fr" },
+    { key: "EMAIL_PROVIDER", label: "Fournisseur", hint: "auto (SMTP en priorité), smtp ou sendgrid" },
+    { key: "SMTP_HOST", label: "Serveur SMTP", hint: "smtp.hostinger.com" },
+    { key: "SMTP_PORT", label: "Port SMTP", hint: "587 (STARTTLS) ou 465 (SSL)" },
+    { key: "SMTP_SECURE", label: "Connexion SSL directe", hint: "true pour le port 465, sinon false" },
+    { key: "SMTP_USER", label: "Identifiant SMTP", hint: "adresse e-mail complète du compte" },
+    { key: "SMTP_PASSWORD", label: "Mot de passe SMTP", secret: true },
+    { key: "EMAIL_FROM", label: "Adresse d'envoi", hint: "contact@votredomaine.fr" },
+    { key: "SMTP_FROM_NAME", label: "Nom affiché de l'expéditeur", hint: "Kids'Med IA" },
+    { key: "SENDGRID_API_KEY", label: "Clé API SendGrid (secours)", secret: true },
   ]},
   { title: "SMS (Twilio)", icon: MessageSquareText, fields: [
     { key: "TWILIO_ACCOUNT_SID", label: "Account SID", secret: true },
@@ -51,17 +58,37 @@ function Page() {
   const r = useApiOrDemo<Record<string, string>>(specs.devConfig, demo);
   const [v, setV] = useState<Record<string, string>>({});
   const [test, setTest] = useState("");
+  const [diag, setDiag] = useState<any>(null);
+  const [diagBusy, setDiagBusy] = useState(false);
   useEffect(() => { setV({}); }, [r.data]);
   const cur = (k: string) => v[k] ?? (groups.flatMap((g) => g.fields).find((f) => f.key === k)?.secret ? "" : r.data?.[k] ?? "");
 
+  async function verifier() {
+    setDiagBusy(true);
+    try { setDiag(await apiFetch("/developer/config/email/diagnostic")); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setDiagBusy(false); }
+  }
   async function save() {
-    const res = await send("PUT", specs.devConfigSet.path, v);
-    toast.success(`Configuration enregistrée${res.demo ? " (démo)" : ""}`);
+    try {
+      const res = await send("PUT", specs.devConfigSet.path, v);
+      toast.success(`Configuration enregistrée${res.demo ? " (démo)" : ""}`);
+      if (!res.demo) await verifier();
+    } catch (e) { toast.error((e as Error).message); }
   }
   async function tester(canal: "email" | "sms") {
     if (!test) { toast.error("Indiquez un e-mail ou un numéro."); return; }
-    try { const res = await send("POST", specs.devConfigTest.path, { canal, destinataire: test }); toast.success(`Test envoyé${res.demo ? " (démo)" : ""}`); }
-    catch (e) { toast.error((e as Error).message); }
+    try {
+      const res = await send<any>("POST", specs.devConfigTest.path, { canal, destinataire: test });
+      if (res.demo) { toast.success("Test simulé (démo)"); return; }
+      const d = res.data ?? {};
+      if (d.envoye) toast.success(`Test ${canal} envoyé (${d.mode ?? "ok"})`);
+      else toast.warning("Le test n'a pas pu être envoyé", {
+        description: d.diagnostic?.smtp?.note ?? d.erreur ?? (d.simule ? "Aucun fournisseur réel configuré : mode simulation." : "Consultez les logs du serveur."),
+        duration: 20_000,
+      });
+      setDiag(d.diagnostic ?? diag);
+    } catch (e) { toast.error((e as Error).message); }
   }
 
   return (
@@ -89,6 +116,33 @@ function Page() {
             <Button variant="outline" onClick={() => tester("email")}>E-mail</Button>
             <Button variant="outline" onClick={() => tester("sms")}>SMS</Button>
           </div>
+        </Panel>
+        <Panel
+          title="Diagnostic e-mail"
+          icon={Mail}
+          actions={<Button size="sm" variant="outline" onClick={verifier} disabled={diagBusy}>{diagBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}Vérifier</Button>}
+        >
+          {!diag ? (
+            <p className="text-sm text-muted-foreground">
+              Vérifiez quel fournisseur est réellement utilisé et si le port SMTP est joignable depuis le serveur.
+              Sur Render, les ports 25/465/587 sont bloqués pour les services gratuits.
+            </p>
+          ) : (
+            <div className="space-y-2 text-sm">
+              <p>Mode effectif : <strong>{diag.mode ?? "—"}</strong>{diag.simule ? " (simulation)" : ""} · demandé : <code>{diag.providerDemande ?? "—"}</code></p>
+              <p>Adresse d'envoi : <strong>{diag.adresseEnvoi?.email ?? "—"}</strong>{diag.adresseEnvoi?.name ? ` (${diag.adresseEnvoi.name})` : ""}</p>
+              <p className="flex flex-wrap items-center gap-2">
+                SMTP : <code>{diag.smtp?.hote ?? "—"}:{diag.smtp?.port ?? "—"}</code>
+                {diag.smtp?.joignable === true && <span className="flex items-center gap-1 text-success"><CheckCircle2 className="h-4 w-4" />joignable</span>}
+                {diag.smtp?.joignable === false && <span className="flex items-center gap-1 text-destructive"><XCircle className="h-4 w-4" />injoignable</span>}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Identifiant : {diag.smtp?.utilisateur || "non configuré"} · mot de passe : {diag.smtp?.motDePasseConfigure ? "configuré" : "absent"} · SendGrid : {diag.sendgrid?.configure ? "configuré" : "absent"}
+              </p>
+              {diag.smtp?.note && <p className="rounded-lg bg-warning/15 p-3 text-xs">{diag.smtp.note}</p>}
+              {diag.smtp?.erreur && <p className="text-xs text-destructive">Erreur de connexion : {diag.smtp.erreur}</p>}
+            </div>
+          )}
         </Panel>
       </div>
     </DashboardShell>
