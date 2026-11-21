@@ -129,8 +129,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   // Application installée : jamais d'écran ordinateur, tout reste dans /app.
+  // Exception : la fiche d'urgence publique, qui doit s'ouvrir même dans la PWA
+  // installée (sinon un scan de QR atterrissait sur l'écran de démonstration).
   useEffect(() => {
-    const guard = () => { if (isStandalone() && !window.location.pathname.startsWith("/app")) router.navigate({ to: "/app", replace: true }); };
+    const guard = () => {
+      if (!isStandalone()) return;
+      const p = window.location.pathname;
+      if (p.startsWith("/app") || p.startsWith("/urgence")) return;
+      router.navigate({ to: "/app", replace: true });
+    };
     guard();
     return router.subscribe("onResolved", guard);
   }, [router]);

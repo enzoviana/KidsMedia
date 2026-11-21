@@ -6,7 +6,7 @@ import {
   Activity, ArrowRight, Baby, Bell, Building2, ChevronRight, ClipboardList, Eye, EyeOff, FileText, HeartPulse, HelpCircle, Home, Info, KeyRound, Lock,
   LogOut, Mail, Monitor, Moon, Phone, Pill, ShieldCheck, Sparkles, Star, Stethoscope, Sun, UserCircle, UserPlus, AlertTriangle, Users, Camera,
 } from "lucide-react";
-import { defaultMethod, getSession, loginStart, logout, mfaSend, roleToKey, setSession, type PendingLogin, type Session } from "@/lib/api";
+import { API_BASE, defaultMethod, forgotPassword, getSession, loginStart, logout, mfaSend, roleToKey, setSession, type PendingLogin, type Session } from "@/lib/api";
 import { MfaSwitcher, mfaHint, useMfa } from "@/components/auth/mfa";
 import { SecuritySettings } from "@/components/auth/security-settings";
 import { send } from "@/lib/mutate";
@@ -215,7 +215,14 @@ function Forgot({ onBack, onCode }: { onBack: () => void; onCode: () => void }) 
       <Header title="Mot de passe oublié" onBack={onBack} />
       <form className="mt-6 space-y-2.5 px-4" onSubmit={async (e) => {
         e.preventDefault(); setBusy(true);
-        try { await send("POST", "/auth/forgot-password", { email }); localStorage.setItem("kidsmed_reset_email", email); toast.success("Si ce compte existe, un code vous a été envoyé."); onCode(); } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
+        try {
+          // Appel direct : « send » simule les écritures quand il n'y a pas de session,
+          // ce qui empêchait l'envoi réel du code de réinitialisation.
+          const message = await forgotPassword(email.trim());
+          localStorage.setItem("kidsmed_reset_email", email.trim());
+          toast.success(message);
+          onCode();
+        } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
       }}>
         <p className="text-muted-foreground">Saisissez votre e-mail : vous recevrez un code à 6 chiffres pour choisir un nouveau mot de passe.</p>
         <input required type="email" className={inputCls} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -235,7 +242,17 @@ function Reset({ onBack }: { onBack: () => void }) {
       <form className="mt-6 space-y-2 px-4" onSubmit={async (e) => {
         e.preventDefault(); if (f.password.length < 8) { toast.error("8 caractères minimum."); return; }
         setBusy(true);
-        try { await send("POST", "/auth/reset-password", { email: f.email, code: f.code, password: f.password }); toast.success("Mot de passe modifié. Connectez-vous."); onBack(); } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
+        try {
+          const r = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: f.email.trim(), code: f.code.trim(), nouveauMotDePasse: f.password }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || j?.success === false) throw new Error(j?.error ?? j?.message ?? "Réinitialisation impossible.");
+          toast.success("Mot de passe modifié. Connectez-vous.");
+          onBack();
+        } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
       }}>
         <input required type="email" className={inputCls} placeholder="Email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
         <input required inputMode="numeric" maxLength={6} className={`${inputCls} tracking-[0.4em] placeholder:tracking-normal`} placeholder="Code à 6 chiffres" value={f.code} onChange={(e) => setF({ ...f, code: e.target.value.replace(/\D/g, "") })} />

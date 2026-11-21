@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Baby, Pill as PillIcon, ScrollText, BrainCircuit, NotebookPen, FileText, QrCode, Printer } from "lucide-react";
 import { DashboardShell } from "@/components/dash/shell";
 import { EnfantPhoto } from "@/components/dash/enfant-photo";
@@ -6,7 +6,7 @@ import { DataPanel, Pill, Empty, fullName, fmtDate } from "@/components/dash/wid
 import { Button } from "@/components/ui/button";
 import { specs } from "@/lib/specs";
 import { toList, getSession } from "@/lib/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link2, CheckCircle2, Circle } from "lucide-react";
 import { demoEnfant, docsInscription, documentsLibres } from "@/lib/demo-enfants";
 import { LiaisonPanel } from "@/components/dash/liaison";
@@ -51,6 +51,17 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 
 function EnfantPage() {
   const { enfantId } = Route.useParams();
+  const navigate = useNavigate();
+  // Ancien QR d'urgence (`/enfants/<id>?urgence=<code>`) : sans session réelle,
+  // on redirige vers la fiche publique au lieu de laisser l'app en mode démo.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("urgence");
+    if (!code) return;
+    const session = getSession();
+    if (!session || session.demo) {
+      navigate({ to: "/urgence/$code", params: { code }, replace: true });
+    }
+  }, [navigate]);
   const v = { enfantId };
   const demoE = demoEnfant(enfantId);
   const liensR = useApiOrDemo<unknown>(specs.liensEnfant, [

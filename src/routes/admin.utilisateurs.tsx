@@ -44,8 +44,28 @@ function Actions({ r }: { r: any }) {
         catch (e) { setOn(!v); toast.error((e as Error).message); }
       }} />
       <Button size="sm" variant="ghost" disabled={protectedDev} title="Envoyer un nouveau mot de passe" onClick={async () => {
-        try { const res = await send("POST", specs.userResetPwd.path, {}, { userId: id }); toast.success(`Nouveau mot de passe envoyé à ${r.email}${res.demo ? " (démo)" : ""}`); }
-        catch (e) { toast.error((e as Error).message); }
+        try {
+          const res = await send<any>("POST", specs.userResetPwd.path, {}, { userId: id });
+          if (res.demo) { toast.success("Nouveau mot de passe simulé (démo)"); return; }
+          const d = res.data ?? {};
+          if (d.envoye) {
+            toast.success(`Nouveau mot de passe envoyé à ${r.email}`, {
+              description: d.motDePasseTemporaire
+                ? `Si l'e-mail n'arrive pas (spam), transmettez ce mot de passe temporaire : ${d.motDePasseTemporaire}`
+                : undefined,
+              duration: 30_000,
+            });
+          } else if (d.motDePasseTemporaire) {
+            toast.warning(`E-mail non envoyé — transmettez ce mot de passe à ${r.email}`, {
+              description: `Mot de passe temporaire : ${d.motDePasseTemporaire}`,
+              duration: 30_000,
+            });
+          } else {
+            toast.error("Mot de passe réinitialisé, mais l'e-mail n'a pas pu être envoyé", {
+              description: d.emailErreur ?? "Vérifiez la configuration e-mail du serveur.",
+            });
+          }
+        } catch (e) { toast.error((e as Error).message); }
       }}><KeyRound className="h-4 w-4" /></Button>
     </span>
   );

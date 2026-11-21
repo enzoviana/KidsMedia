@@ -47,12 +47,14 @@ export function DataTable({ rows, cols, onOpenRow }: { rows: any[]; cols: Col[];
 const rid = (r: any) => String(r?._id ?? r?.id ?? "");
 
 /** Page liste générique : charge la spec (API ou démo), recherche, tableau et boutons Ajouter/Voir/Modifier/Supprimer. */
-export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow, sortRows, realOnly }: {
+export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, before, crud, additionalRows = [], onOpenRow, sortRows, realOnly, renderView }: {
   title: string; role?: RoleKey | undefined; spec: RouteSpec; demo: any[]; cols: Col[]; icon?: LucideIcon | undefined; actions?: ReactNode;
   vars?: Record<string, string | undefined> | undefined; before?: ReactNode; crud?: Crud | undefined; additionalRows?: any[];
   onOpenRow?: ((row: any) => void) | undefined; sortRows?: ((a: any, b: any) => number) | undefined;
   /** Ne jamais afficher les données de démonstration pour une session réelle. */
   realOnly?: boolean | undefined;
+  /** Remplace la modale de détail générique (ex. ticket de support). */
+  renderView?: ((row: any, close: () => void) => ReactNode) | undefined;
 }) {
   const r = useApiOrDemo<unknown>(spec, demo, vars, { fallbackToDemo: !realOnly });
   const navigate = useNavigate();
@@ -129,7 +131,7 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrer…" className="pl-8" />
           </div>
         }>
-        <DataTable rows={rows} cols={allCols} onOpenRow={onOpenRow ?? (crud?.view === "enfant" ? (row) => {
+        <DataTable rows={rows} cols={allCols} onOpenRow={onOpenRow ?? (renderView ? (row) => setViewing(row) : crud?.view === "enfant" ? (row) => {
           const enfantId = enfantIdOf(row);
           if (enfantId) navigate({ to: "/enfants/$enfantId", params: { enfantId } });
         } : undefined)} />
@@ -137,9 +139,11 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
       {crud && (
         <>
           <FormDialog open={adding} onOpenChange={setAdding} title={`Ajouter ${crud.entity}`} fields={crud.fields} submitLabel="Ajouter" onSubmit={create} />
-          <FormDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} title={`Modifier ${crud.entity}`} fields={crud.fields} initial={editing} onSubmit={update} />
-          <ViewDialog row={viewing} onOpenChange={(o) => !o && setViewing(null)} title={`Détail — ${crud.entity}`} />
-          <ConfirmDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)} title={`Supprimer ${crud.entity} ?`} description="Cette action est définitive." onConfirm={remove} />
+          {!crud.noEdit && <FormDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} title={`Modifier ${crud.entity}`} fields={crud.fields} initial={editing} onSubmit={update} />}
+          {renderView
+            ? renderView(viewing, () => setViewing(null))
+            : <ViewDialog row={viewing} onOpenChange={(o) => !o && setViewing(null)} title={`Détail — ${crud.entity}`} />}
+          {!crud.noDelete && <ConfirmDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)} title={`Supprimer ${crud.entity} ?`} description="Cette action est définitive." onConfirm={remove} />}
         </>
       )}
     </DashboardShell>

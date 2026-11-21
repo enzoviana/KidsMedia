@@ -39,7 +39,11 @@ function QrButton({ e }: { e: any }) {
   const [open, setOpen] = useState(false);
   const [qr, setQr] = useState("");
   useEffect(() => {
-    if (open) { try { setQr(qrDataUrl(`${window.location.origin}/enfants/${enfantIdOf(e)}?urgence=${e.codeLiaison ?? ""}`, 420)); } catch { setQr(""); } }
+    if (!open) return;
+    // Jeton dédié à l'urgence : ne permet pas de rattacher un compte au dossier.
+    const code = String(e.urgenceToken ?? e.codeLiaison ?? "").trim();
+    if (!code) { setQr(""); return; }
+    try { setQr(qrDataUrl(`${window.location.origin}/urgence/${encodeURIComponent(code)}`, 420)); } catch { setQr(""); }
   }, [open, e]);
   return (
     <>
@@ -47,9 +51,11 @@ function QrButton({ e }: { e: any }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md text-center">
           <DialogHeader><DialogTitle>QR code médical — {fullName(e)}</DialogTitle></DialogHeader>
-          {qr && <img src={qr} alt={`QR code médical de ${e.prenom}`} className="mx-auto w-full max-w-xs rounded-xl bg-background p-2" />}
+          {qr
+            ? <img src={qr} alt={`QR code médical de ${e.prenom}`} className="mx-auto w-full max-w-xs rounded-xl bg-background p-2" />
+            : <p className="rounded-lg bg-warning/15 p-3 text-sm">Aucun code d'urgence disponible pour cet enfant. Ouvrez son dossier puis utilisez « Régénérer » dans le bloc Liaison &amp; accès.</p>}
           <p className="text-sm">Groupe sanguin <strong>{e.groupeSanguin ?? "—"}</strong> · Allergies <strong>{(e.allergies ?? []).join(", ") || "aucune"}</strong></p>
-          <p className="text-xs text-muted-foreground">À présenter au médecin ou aux urgences : le scan ouvre le dossier médical.</p>
+          <p className="text-xs text-muted-foreground">À présenter au médecin ou aux urgences : le scan ouvre une fiche d'urgence accessible sans connexion.</p>
           <Button variant="outline" onClick={() => document.documentElement.requestFullscreen?.()}><Maximize2 className="mr-1 h-4 w-4" />Plein écran</Button>
         </DialogContent>
       </Dialog>

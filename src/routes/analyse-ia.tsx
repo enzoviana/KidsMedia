@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Camera, Loader2, Phone, Stethoscope, Eye, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
@@ -40,9 +40,15 @@ const risqueStyle = {
 
 function Page() {
   const { enfant: initial } = Route.useSearch();
-  const enfantsR = useApiOrDemo<unknown>(specs.enfants, demoEnfants);
+  const sessionReelle = !!getSession() && !getSession()?.demo;
+  // Pour une session réelle, ne jamais retomber sur les enfants de démonstration :
+  // l'analyse partait alors vers l'API avec un identifiant fictif (« enfant introuvable »).
+  const enfantsR = useApiOrDemo<unknown>(specs.enfants, demoEnfants, undefined, { fallbackToDemo: !sessionReelle });
   const enfants = toList(enfantsR.data);
   const [enfantId, setEnfantId] = useState(initial ?? enfantIdOf(enfants[0]) ?? "");
+  useEffect(() => {
+    if (!enfantId && enfants.length) setEnfantId(enfantIdOf(enfants[0]) ?? "");
+  }, [enfantId, enfants]);
   const [sel, setSel] = useState<string[]>([]);
   const [temp, setTemp] = useState("");
   const [duree, setDuree] = useState("");
@@ -57,6 +63,11 @@ function Page() {
 
   async function analyser() {
     if (!enfantId) { toast.error("Choisissez un enfant."); return; }
+    const session = getSession();
+    if (session && !session.demo && (enfantId.startsWith("demo-") || !enfants.some((e) => enfantIdOf(e) === enfantId))) {
+      toast.error("Ce dossier de démonstration n'existe pas dans votre compte. Rechargez la page pour retrouver vos enfants.");
+      return;
+    }
     if (!sel.length && !photo) { toast.error("Cochez au moins un symptôme ou ajoutez une photo."); return; }
     setBusy(true);
     try {
@@ -87,7 +98,15 @@ function Page() {
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="space-y-4 lg:col-span-3">
           <Panel title="1. Enfant concerné" icon={Sparkles}>
+            {!enfants.length && (
+              <p role="alert" className="mb-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {enfantsR.reason
+                  ? `Vos enfants n'ont pas pu être chargés : ${enfantsR.reason}`
+                  : "Aucun enfant n'est rattaché à votre compte. Déclarez ou liez un enfant depuis la page Enfants."}
+              </p>
+            )}
             <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={enfantId} onChange={(e) => setEnfantId(e.target.value)} aria-label="Enfant">
+              {!enfants.length && <option value="">— Aucun enfant disponible —</option>}
               {enfants.map((e) => <option key={enfantIdOf(e) ?? fullName(e)} value={enfantIdOf(e) ?? ""}>{fullName(e)}</option>)}
             </select>
             {enfant?.allergies?.length > 0 && <p className="mt-2 text-xs"><Pill tone="danger">Allergies : {enfant.allergies.join(", ")}</Pill></p>}

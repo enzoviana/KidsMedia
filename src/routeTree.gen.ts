@@ -60,6 +60,7 @@ import { Route as EtablissementsIndexRouteImport } from './routes/etablissements
 import { Route as EtablissementsEtablissementIdRouteImport } from './routes/etablissements.$etablissementId'
 import { Route as FicheMedecinMedecinIdRouteImport } from './routes/fiche-medecin.$medecinId'
 import { Route as FicheRsaiRsaiIdRouteImport } from './routes/fiche-rsai.$rsaiId'
+import { Route as UrgenceCodeRouteImport } from './routes/urgence.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -317,6 +318,11 @@ const FicheRsaiRsaiIdRoute = FicheRsaiRsaiIdRouteImport.update({
   path: '/fiche-rsai/$rsaiId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UrgenceCodeRoute = UrgenceCodeRouteImport.update({
+  id: '/urgence/$code',
+  path: '/urgence/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/etablissements/$etablissementId': typeof EtablissementsEtablissementIdRoute
   '/fiche-medecin/$medecinId': typeof FicheMedecinMedecinIdRoute
   '/fiche-rsai/$rsaiId': typeof FicheRsaiRsaiIdRoute
+  '/urgence/$code': typeof UrgenceCodeRoute
   '/admin/': typeof AdminIndexRoute
   '/dev/': typeof DevIndexRoute
   '/enfants/': typeof EnfantsIndexRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/etablissements/$etablissementId': typeof EtablissementsEtablissementIdRoute
   '/fiche-medecin/$medecinId': typeof FicheMedecinMedecinIdRoute
   '/fiche-rsai/$rsaiId': typeof FicheRsaiRsaiIdRoute
+  '/urgence/$code': typeof UrgenceCodeRoute
   '/admin': typeof AdminIndexRoute
   '/dev': typeof DevIndexRoute
   '/enfants': typeof EnfantsIndexRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/etablissements/$etablissementId': typeof EtablissementsEtablissementIdRoute
   '/fiche-medecin/$medecinId': typeof FicheMedecinMedecinIdRoute
   '/fiche-rsai/$rsaiId': typeof FicheRsaiRsaiIdRoute
+  '/urgence/$code': typeof UrgenceCodeRoute
   '/admin/': typeof AdminIndexRoute
   '/dev/': typeof DevIndexRoute
   '/enfants/': typeof EnfantsIndexRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/etablissements/$etablissementId'
     | '/fiche-medecin/$medecinId'
     | '/fiche-rsai/$rsaiId'
+    | '/urgence/$code'
     | '/admin/'
     | '/dev/'
     | '/enfants/'
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/etablissements/$etablissementId'
     | '/fiche-medecin/$medecinId'
     | '/fiche-rsai/$rsaiId'
+    | '/urgence/$code'
     | '/admin'
     | '/dev'
     | '/enfants'
@@ -634,6 +645,7 @@ export interface FileRouteTypes {
     | '/etablissements/$etablissementId'
     | '/fiche-medecin/$medecinId'
     | '/fiche-rsai/$rsaiId'
+    | '/urgence/$code'
     | '/admin/'
     | '/dev/'
     | '/enfants/'
@@ -688,6 +700,7 @@ export interface RootRouteChildren {
   EtablissementsEtablissementIdRoute: typeof EtablissementsEtablissementIdRoute
   FicheMedecinMedecinIdRoute: typeof FicheMedecinMedecinIdRoute
   FicheRsaiRsaiIdRoute: typeof FicheRsaiRsaiIdRoute
+  UrgenceCodeRoute: typeof UrgenceCodeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DevIndexRoute: typeof DevIndexRoute
   EnfantsIndexRoute: typeof EnfantsIndexRoute
@@ -1053,6 +1066,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FicheRsaiRsaiIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/urgence/$code': {
+      id: '/urgence/$code'
+      path: '/urgence/$code'
+      fullPath: '/urgence/$code'
+      preLoaderRoute: typeof UrgenceCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1104,6 +1124,7 @@ const rootRouteChildren: RootRouteChildren = {
   EtablissementsEtablissementIdRoute: EtablissementsEtablissementIdRoute,
   FicheMedecinMedecinIdRoute: FicheMedecinMedecinIdRoute,
   FicheRsaiRsaiIdRoute: FicheRsaiRsaiIdRoute,
+  UrgenceCodeRoute: UrgenceCodeRoute,
   AdminIndexRoute: AdminIndexRoute,
   DevIndexRoute: DevIndexRoute,
   EnfantsIndexRoute: EnfantsIndexRoute,

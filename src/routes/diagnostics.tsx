@@ -22,9 +22,21 @@ export const Route = createFileRoute("/diagnostics")({
 const demo: any[] = [{enfant:{prenom:"Léa",nom:"Martin"},symptomes:["fièvre","toux"],resultat:"Rhinopharyngite probable",confiance:0.82,createdAt:new Date().toISOString()},{enfant:{prenom:"Lucas",nom:"Durand"},symptomes:["éruption"],resultat:"Varicelle à confirmer",confiance:0.64,createdAt:new Date().toISOString()}];
 const cols: Col[] = [{label:"Date",render:(r)=>fmtDate(r.createdAt)},{label:"Enfant",render:(r)=><EnfantLink e={r.enfant} />},{label:"Symptômes",render:(r)=>(r.symptomes??[]).join(", ")},{label:"Résultat",render:(r)=><span className="font-medium">{r.resultat??"—"}</span>},{label:"Confiance",render:(r)=><Pill tone={(r.confiance??0)>0.75?"success":"warning"}>{Math.round((r.confiance??0)*100)} %</Pill>}];
 
-const crud: Crud = {"entity": "un diagnostic", "base": "/diagnostics", "noEdit": true, "fields": [{"name": "enfant", "label": "Enfant", "lookup": "enfant", "required": true}, {"name": "symptomes", "label": "Symptômes", "type": "textarea", "required": true}]};
+// La création passe par /analyse-ia : il n'existe pas de POST /diagnostics.
+// L'ancien bouton « Ajouter » envoyait vers cette route inexistante (404).
+const crud: Crud = { entity: "un diagnostic", base: "/diagnostics", noCreate: true, noEdit: true, noDelete: true, fields: [] };
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Diagnostics IA" spec={specs.diagEnfants} demo={demo} cols={cols} icon={BrainCircuit} />;
+  return (
+    <ListPage
+      crud={crud}
+      title="Diagnostics IA"
+      spec={specs.diagEnfants}
+      demo={demo}
+      cols={cols}
+      icon={BrainCircuit}
+      actions={<Link to="/analyse-ia" className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><BrainCircuit className="h-4 w-4" />Nouvelle analyse</Link>}
+    />
+  );
 }
