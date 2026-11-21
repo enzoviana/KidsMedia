@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CreditCard, Receipt, CalendarClock } from "lucide-react";
+import { CreditCard, Receipt, CalendarClock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
 import { DataPanel, Pill, fmtDate } from "@/components/dash/widgets";
@@ -8,11 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { specs } from "@/lib/specs";
 import { getSession, roleToKey } from "@/lib/api";
 import { useHydrated } from "@/lib/use-hydrated";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { StripeCheckout } from "@/components/dash/stripe";
 import { useApiOrDemo } from "@/lib/use-api";
 import { toList } from "@/lib/api";
 import { forfaitsPourRole, demoTarifs } from "@/lib/forfaits";
+import { send } from "@/lib/mutate";
 
 
 export const Route = createFileRoute("/abonnement")({
@@ -45,8 +47,31 @@ function Page() {
   const spec = k === "creche" || k === "rsai" ? specs.aboEtab : specs.aboMe;
   const [choix, setChoix] = useState<string | null>(null);
   const [actuel, setActuel] = useState<string | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const qc = useQueryClient();
   const tarifs = useApiOrDemo<unknown>(specs.tarifsAll, demoTarifs);
   const offres = forfaitsPourRole(toList(tarifs.data), k);
+
+  const rafraichir = () => { void qc.invalidateQueries({ queryKey: ["api", spec.id] }); };
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("paiement");
+    if (p === "ok") toast.success("Paiement confirmé — votre abonnement sera actif dans quelques instants.");
+    if (p === "annule") toast.info("Paiement annulé.");
+  }, []);
+
+  async function ouvrirPortail() {
+    const s = getSession();
+    if (!s || s.demo) { toast.info("Portail Stripe indisponible en mode démonstration."); return; }
+    setPortalBusy(true);
+    try {
+      const r = await send<{ url: string }>("POST", specs.stripePortal.path);
+      if (r.data?.url) window.location.href = r.data.url;
+      else throw new Error("Lien du portail indisponible.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Portail indisponible.");
+    } finally { setPortalBusy(false); }
+  }
   return (
     <DashboardShell title="Mon abonnement">
       <DataPanel title="Formule" icon={CreditCard} spec={spec} demoData={demo}>
@@ -69,7 +94,7 @@ function Page() {
               </div>
               <div><p className="mb-1 text-sm text-muted-foreground">Utilisation du quota enfants : {pct} %</p><Progress value={pct} /></div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => toast.info("Démo : ouverture du portail client Stripe (carte, factures).")}>Gérer ma carte et mes factures</Button>
+                <Button variant="outline" disabled={portalBusy} onClick={ouvrirPortail}>{portalBusy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Gérer ma carte et mes factures</Button>
                 <Button variant="outline" onClick={() => toast.info("Demande de résiliation envoyée.")}><CalendarClock className="mr-1 h-4 w-4" />Résilier</Button>
               </div>
               <div>
@@ -94,7 +119,7 @@ function Page() {
           ))}
         </div>
       </div>
-      <StripeCheckout plan={choix} catalog={offres} onClose={() => setChoix(null)} onPaid={(id) => setActuel(id)} />
+      <StripeCheckout plan={choix} catalog={offres} onClose={() => setChoix(null)} onPaid={(id) => { setActuel(id); rafraichir(); window.setTimeout(rafraichir, 3000); }} />
     </DashboardShell>
   );
 }

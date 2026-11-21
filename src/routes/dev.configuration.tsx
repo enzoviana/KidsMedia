@@ -73,6 +73,7 @@ const groups: Group[] = [
   ]},
   { key: "stripe", title: "Paiement (Stripe)", icon: CreditCard, fields: [
     { key: "STRIPE_SECRET_KEY", label: "Clé secrète Stripe", secret: true, hint: "sk_live_… ou sk_test_…" },
+    { key: "STRIPE_PUBLISHABLE_KEY", label: "Clé publique Stripe", hint: "pk_live_… ou pk_test_… — requise pour le paiement embarqué" },
     { key: "STRIPE_WEBHOOK_SECRET", label: "Secret de signature du webhook", secret: true, hint: "whsec_… (identique à celui affiché par Stripe)" },
   ]},
   { key: "security", title: "Sécurité & accès", icon: ShieldCheck, columns: 2, fields: [
@@ -284,6 +285,10 @@ function Page() {
           </Panel>
           <Panel title="Configurer le webhook dans Stripe" icon={Link2}>
             <div className="space-y-4 text-sm">
+              <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Paiement embarqué</p>
+                <p>Avec la <strong>clé publique</strong>, le formulaire Stripe s'affiche directement dans la page « Mon abonnement », sans quitter votre domaine. Sans clé publique, repli automatique sur la page Stripe hébergée.</p>
+              </div>
               <div className="space-y-1">
                 <p className="font-medium">1. Adresse du point de terminaison</p>
                 <div className="flex gap-2">
