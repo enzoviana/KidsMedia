@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { specs } from "@/lib/specs";
 import { useApiOrDemo } from "@/lib/use-api";
 import { send } from "@/lib/mutate";
+import { getSession } from "@/lib/api";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -35,8 +36,9 @@ const demo = {
 
 export function SecuriteEtab({ etablissementId }: { etablissementId: string }) {
   const r = useApiOrDemo<any>(specs.etabSecurite, demo, { etablissementId });
+  const isDemo = !!getSession()?.demo;
   return <Panel title="Sécurité & géorepérage" icon={ShieldCheck} spec={specs.etabSecurite} demo={r.demo} reason={r.reason}>
-    <Form key={JSON.stringify(r.data)} init={{ ...demo, ...(r.data ?? {}) }} etablissementId={etablissementId} />
+    <Form key={JSON.stringify(r.data)} init={isDemo ? { ...demo, ...(r.data ?? {}) } : (r.data ?? {})} etablissementId={etablissementId} />
   </Panel>;
 }
 

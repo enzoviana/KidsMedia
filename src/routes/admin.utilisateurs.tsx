@@ -75,13 +75,14 @@ const cols: Col[] = [
   { label: "Nom", render: (r) => <span className="font-medium">{fullName(r)}</span> },
   { label: "Email", render: (r) => r.email },
   { label: "Rôle", render: (r) => <Pill>{r.role}</Pill> },
+  { label: "Rattachement", render: (r) => r.groupe?.nom ?? r.etablissement?.nom ?? "—" },
   { label: "Statut", render: (r) => <Pill tone={isActive(r) ? "success" : "danger"}>{isActive(r) ? "Actif" : "Suspendu"}</Pill> },
   { label: "Suspendre · MDP", render: (r) => <Actions r={r} /> },
 ];
 
 function Page() {
   const dev = roleToKey(getSession()?.user.role) === "dev";
-  const roles = ["creche", "rsai", "medecin", "parent", "admin", ...(dev ? ["developpeur"] : [])];
+  const roles = ["creche", "rsai", "directeur", "medecin", "parent", "admin", ...(dev ? ["developpeur"] : [])];
   const crud: Crud = { entity: "un utilisateur", base: "/users",
     afterCreate: (res: any) => {
       if (res?.demo) return;
@@ -109,6 +110,7 @@ function Page() {
     { name: "role", label: "Rôle", type: "select", required: true, options: roles },
     { name: "telephone", label: "Téléphone (SMS)", type: "tel" },
     { name: "etablissementId", label: "Crèche / établissement (requis pour un compte crèche)", lookup: "etablissement", quickCreate: true },
+    { name: "groupeId", label: "Groupe territorial (requis pour un directeur)", lookup: "groupe" },
   ] } as Crud;
   return <ListPage crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog} />;
 }

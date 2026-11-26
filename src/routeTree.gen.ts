@@ -10,20 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AbonnementRouteImport } from './routes/abonnement'
 import { Route as AffectationsRouteImport } from './routes/affectations'
 import { Route as AnalyseIaRouteImport } from './routes/analyse-ia'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as CguRouteImport } from './routes/cgu'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CoordinationRouteImport } from './routes/coordination'
 import { Route as CrecheRouteImport } from './routes/creche'
 import { Route as DiagnosticsRouteImport } from './routes/diagnostics'
+import { Route as DirecteurRouteImport } from './routes/directeur'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DocumentsObligatoiresRouteImport } from './routes/documents-obligatoires'
+import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MaCrecheRouteImport } from './routes/ma-creche'
 import { Route as MedecinRouteImport } from './routes/medecin'
 import { Route as MedecinsRouteImport } from './routes/medecins'
 import { Route as MedicamentsRouteImport } from './routes/medicaments'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MessagerieRouteImport } from './routes/messagerie'
 import { Route as MigrationsRouteImport } from './routes/migrations'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -36,10 +44,14 @@ import { Route as RoutesManquantesRouteImport } from './routes/routes-manquantes
 import { Route as RsaiRouteImport } from './routes/rsai'
 import { Route as RsaiAnnuaireRouteImport } from './routes/rsai-annuaire'
 import { Route as SectionsRouteImport } from './routes/sections'
+import { Route as SecuriteRgpdRouteImport } from './routes/securite-rgpd'
+import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as TransmissionsRouteImport } from './routes/transmissions'
 import { Route as AbonnementPaiementRouteImport } from './routes/abonnement_.paiement'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAbonnementsRouteImport } from './routes/admin.abonnements'
+import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
+import { Route as AdminGroupesRouteImport } from './routes/admin.groupes'
 import { Route as AdminLiaisonsRouteImport } from './routes/admin.liaisons'
 import { Route as AdminLogsRouteImport } from './routes/admin.logs'
 import { Route as AdminSecuriteRouteImport } from './routes/admin.securite'
@@ -68,6 +80,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AbonnementRoute = AbonnementRouteImport.update({
   id: '/abonnement',
   path: '/abonnement',
@@ -88,9 +105,24 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CguRoute = CguRouteImport.update({
+  id: '/cgu',
+  path: '/cgu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoordinationRoute = CoordinationRouteImport.update({
@@ -108,6 +140,11 @@ const DiagnosticsRoute = DiagnosticsRouteImport.update({
   path: '/diagnostics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DirecteurRoute = DirecteurRouteImport.update({
+  id: '/directeur',
+  path: '/directeur',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocumentsRoute = DocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -116,6 +153,16 @@ const DocumentsRoute = DocumentsRouteImport.update({
 const DocumentsObligatoiresRoute = DocumentsObligatoiresRouteImport.update({
   id: '/documents-obligatoires',
   path: '/documents-obligatoires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
+  id: '/fonctionnalites',
+  path: '/fonctionnalites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MaCrecheRoute = MaCrecheRouteImport.update({
@@ -136,6 +183,11 @@ const MedecinsRoute = MedecinsRouteImport.update({
 const MedicamentsRoute = MedicamentsRouteImport.update({
   id: '/medicaments',
   path: '/medicaments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagerieRoute = MessagerieRouteImport.update({
@@ -198,6 +250,16 @@ const SectionsRoute = SectionsRouteImport.update({
   path: '/sections',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecuriteRgpdRoute = SecuriteRgpdRouteImport.update({
+  id: '/securite-rgpd',
+  path: '/securite-rgpd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarifsRoute = TarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TransmissionsRoute = TransmissionsRouteImport.update({
   id: '/transmissions',
   path: '/transmissions',
@@ -216,6 +278,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAbonnementsRoute = AdminAbonnementsRouteImport.update({
   id: '/admin/abonnements',
   path: '/admin/abonnements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminContactsRoute = AdminContactsRouteImport.update({
+  id: '/admin/contacts',
+  path: '/admin/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminGroupesRoute = AdminGroupesRouteImport.update({
+  id: '/admin/groupes',
+  path: '/admin/groupes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLiaisonsRoute = AdminLiaisonsRouteImport.update({
@@ -332,20 +404,28 @@ const UrgenceCodeRoute = UrgenceCodeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/contact': typeof ContactRoute
   '/coordination': typeof CoordinationRoute
   '/creche': typeof CrecheRoute
   '/diagnostics': typeof DiagnosticsRoute
+  '/directeur': typeof DirecteurRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/messagerie': typeof MessagerieRoute
   '/migrations': typeof MigrationsRoute
   '/notifications': typeof NotificationsRoute
@@ -358,9 +438,13 @@ export interface FileRoutesByFullPath {
   '/rsai': typeof RsaiRoute
   '/rsai-annuaire': typeof RsaiAnnuaireRoute
   '/sections': typeof SectionsRoute
+  '/securite-rgpd': typeof SecuriteRgpdRoute
+  '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
   '/abonnement/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/groupes': typeof AdminGroupesRoute
   '/admin/liaisons': typeof AdminLiaisonsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/securite': typeof AdminSecuriteRoute
@@ -387,20 +471,28 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/contact': typeof ContactRoute
   '/coordination': typeof CoordinationRoute
   '/creche': typeof CrecheRoute
   '/diagnostics': typeof DiagnosticsRoute
+  '/directeur': typeof DirecteurRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/messagerie': typeof MessagerieRoute
   '/migrations': typeof MigrationsRoute
   '/notifications': typeof NotificationsRoute
@@ -413,9 +505,13 @@ export interface FileRoutesByTo {
   '/rsai': typeof RsaiRoute
   '/rsai-annuaire': typeof RsaiAnnuaireRoute
   '/sections': typeof SectionsRoute
+  '/securite-rgpd': typeof SecuriteRgpdRoute
+  '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
   '/abonnement/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/groupes': typeof AdminGroupesRoute
   '/admin/liaisons': typeof AdminLiaisonsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/securite': typeof AdminSecuriteRoute
@@ -443,20 +539,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/abonnement': typeof AbonnementRoute
   '/affectations': typeof AffectationsRoute
   '/analyse-ia': typeof AnalyseIaRoute
   '/app': typeof AppRoute
+  '/cgu': typeof CguRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/contact': typeof ContactRoute
   '/coordination': typeof CoordinationRoute
   '/creche': typeof CrecheRoute
   '/diagnostics': typeof DiagnosticsRoute
+  '/directeur': typeof DirecteurRoute
   '/documents': typeof DocumentsRoute
   '/documents-obligatoires': typeof DocumentsObligatoiresRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/ma-creche': typeof MaCrecheRoute
   '/medecin': typeof MedecinRoute
   '/medecins': typeof MedecinsRoute
   '/medicaments': typeof MedicamentsRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/messagerie': typeof MessagerieRoute
   '/migrations': typeof MigrationsRoute
   '/notifications': typeof NotificationsRoute
@@ -469,9 +573,13 @@ export interface FileRoutesById {
   '/rsai': typeof RsaiRoute
   '/rsai-annuaire': typeof RsaiAnnuaireRoute
   '/sections': typeof SectionsRoute
+  '/securite-rgpd': typeof SecuriteRgpdRoute
+  '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
   '/abonnement_/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/groupes': typeof AdminGroupesRoute
   '/admin/liaisons': typeof AdminLiaisonsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/securite': typeof AdminSecuriteRoute
@@ -500,20 +608,28 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/a-propos'
     | '/abonnement'
     | '/affectations'
     | '/analyse-ia'
     | '/app'
+    | '/cgu'
+    | '/confidentialite'
     | '/connexion'
+    | '/contact'
     | '/coordination'
     | '/creche'
     | '/diagnostics'
+    | '/directeur'
     | '/documents'
     | '/documents-obligatoires'
+    | '/fonctionnalites'
+    | '/inscription'
     | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
+    | '/mentions-legales'
     | '/messagerie'
     | '/migrations'
     | '/notifications'
@@ -526,9 +642,13 @@ export interface FileRouteTypes {
     | '/rsai'
     | '/rsai-annuaire'
     | '/sections'
+    | '/securite-rgpd'
+    | '/tarifs'
     | '/transmissions'
     | '/abonnement/paiement'
     | '/admin/abonnements'
+    | '/admin/contacts'
+    | '/admin/groupes'
     | '/admin/liaisons'
     | '/admin/logs'
     | '/admin/securite'
@@ -555,20 +675,28 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/a-propos'
     | '/abonnement'
     | '/affectations'
     | '/analyse-ia'
     | '/app'
+    | '/cgu'
+    | '/confidentialite'
     | '/connexion'
+    | '/contact'
     | '/coordination'
     | '/creche'
     | '/diagnostics'
+    | '/directeur'
     | '/documents'
     | '/documents-obligatoires'
+    | '/fonctionnalites'
+    | '/inscription'
     | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
+    | '/mentions-legales'
     | '/messagerie'
     | '/migrations'
     | '/notifications'
@@ -581,9 +709,13 @@ export interface FileRouteTypes {
     | '/rsai'
     | '/rsai-annuaire'
     | '/sections'
+    | '/securite-rgpd'
+    | '/tarifs'
     | '/transmissions'
     | '/abonnement/paiement'
     | '/admin/abonnements'
+    | '/admin/contacts'
+    | '/admin/groupes'
     | '/admin/liaisons'
     | '/admin/logs'
     | '/admin/securite'
@@ -610,20 +742,28 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/a-propos'
     | '/abonnement'
     | '/affectations'
     | '/analyse-ia'
     | '/app'
+    | '/cgu'
+    | '/confidentialite'
     | '/connexion'
+    | '/contact'
     | '/coordination'
     | '/creche'
     | '/diagnostics'
+    | '/directeur'
     | '/documents'
     | '/documents-obligatoires'
+    | '/fonctionnalites'
+    | '/inscription'
     | '/ma-creche'
     | '/medecin'
     | '/medecins'
     | '/medicaments'
+    | '/mentions-legales'
     | '/messagerie'
     | '/migrations'
     | '/notifications'
@@ -636,9 +776,13 @@ export interface FileRouteTypes {
     | '/rsai'
     | '/rsai-annuaire'
     | '/sections'
+    | '/securite-rgpd'
+    | '/tarifs'
     | '/transmissions'
     | '/abonnement_/paiement'
     | '/admin/abonnements'
+    | '/admin/contacts'
+    | '/admin/groupes'
     | '/admin/liaisons'
     | '/admin/logs'
     | '/admin/securite'
@@ -666,20 +810,28 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
   AbonnementRoute: typeof AbonnementRoute
   AffectationsRoute: typeof AffectationsRoute
   AnalyseIaRoute: typeof AnalyseIaRoute
   AppRoute: typeof AppRoute
+  CguRoute: typeof CguRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
   ConnexionRoute: typeof ConnexionRoute
+  ContactRoute: typeof ContactRoute
   CoordinationRoute: typeof CoordinationRoute
   CrecheRoute: typeof CrecheRoute
   DiagnosticsRoute: typeof DiagnosticsRoute
+  DirecteurRoute: typeof DirecteurRoute
   DocumentsRoute: typeof DocumentsRoute
   DocumentsObligatoiresRoute: typeof DocumentsObligatoiresRoute
+  FonctionnalitesRoute: typeof FonctionnalitesRoute
+  InscriptionRoute: typeof InscriptionRoute
   MaCrecheRoute: typeof MaCrecheRoute
   MedecinRoute: typeof MedecinRoute
   MedecinsRoute: typeof MedecinsRoute
   MedicamentsRoute: typeof MedicamentsRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   MessagerieRoute: typeof MessagerieRoute
   MigrationsRoute: typeof MigrationsRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -692,9 +844,13 @@ export interface RootRouteChildren {
   RsaiRoute: typeof RsaiRoute
   RsaiAnnuaireRoute: typeof RsaiAnnuaireRoute
   SectionsRoute: typeof SectionsRoute
+  SecuriteRgpdRoute: typeof SecuriteRgpdRoute
+  TarifsRoute: typeof TarifsRoute
   TransmissionsRoute: typeof TransmissionsRoute
   AbonnementPaiementRoute: typeof AbonnementPaiementRoute
   AdminAbonnementsRoute: typeof AdminAbonnementsRoute
+  AdminContactsRoute: typeof AdminContactsRoute
+  AdminGroupesRoute: typeof AdminGroupesRoute
   AdminLiaisonsRoute: typeof AdminLiaisonsRoute
   AdminLogsRoute: typeof AdminLogsRoute
   AdminSecuriteRoute: typeof AdminSecuriteRoute
@@ -729,6 +885,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/abonnement': {
       id: '/abonnement'
       path: '/abonnement'
@@ -757,11 +920,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cgu': {
+      id: '/cgu'
+      path: '/cgu'
+      fullPath: '/cgu'
+      preLoaderRoute: typeof CguRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connexion': {
       id: '/connexion'
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coordination': {
@@ -785,6 +969,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/directeur': {
+      id: '/directeur'
+      path: '/directeur'
+      fullPath: '/directeur'
+      preLoaderRoute: typeof DirecteurRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/documents': {
       id: '/documents'
       path: '/documents'
@@ -797,6 +988,20 @@ declare module '@tanstack/react-router' {
       path: '/documents-obligatoires'
       fullPath: '/documents-obligatoires'
       preLoaderRoute: typeof DocumentsObligatoiresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fonctionnalites': {
+      id: '/fonctionnalites'
+      path: '/fonctionnalites'
+      fullPath: '/fonctionnalites'
+      preLoaderRoute: typeof FonctionnalitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ma-creche': {
@@ -825,6 +1030,13 @@ declare module '@tanstack/react-router' {
       path: '/medicaments'
       fullPath: '/medicaments'
       preLoaderRoute: typeof MedicamentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messagerie': {
@@ -911,6 +1123,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/securite-rgpd': {
+      id: '/securite-rgpd'
+      path: '/securite-rgpd'
+      fullPath: '/securite-rgpd'
+      preLoaderRoute: typeof SecuriteRgpdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarifs': {
+      id: '/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof TarifsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transmissions': {
       id: '/transmissions'
       path: '/transmissions'
@@ -937,6 +1163,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/abonnements'
       fullPath: '/admin/abonnements'
       preLoaderRoute: typeof AdminAbonnementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/contacts': {
+      id: '/admin/contacts'
+      path: '/admin/contacts'
+      fullPath: '/admin/contacts'
+      preLoaderRoute: typeof AdminContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/groupes': {
+      id: '/admin/groupes'
+      path: '/admin/groupes'
+      fullPath: '/admin/groupes'
+      preLoaderRoute: typeof AdminGroupesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/liaisons': {
@@ -1098,20 +1338,28 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
   AbonnementRoute: AbonnementRoute,
   AffectationsRoute: AffectationsRoute,
   AnalyseIaRoute: AnalyseIaRoute,
   AppRoute: AppRoute,
+  CguRoute: CguRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
   ConnexionRoute: ConnexionRoute,
+  ContactRoute: ContactRoute,
   CoordinationRoute: CoordinationRoute,
   CrecheRoute: CrecheRoute,
   DiagnosticsRoute: DiagnosticsRoute,
+  DirecteurRoute: DirecteurRoute,
   DocumentsRoute: DocumentsRoute,
   DocumentsObligatoiresRoute: DocumentsObligatoiresRoute,
+  FonctionnalitesRoute: FonctionnalitesRoute,
+  InscriptionRoute: InscriptionRoute,
   MaCrecheRoute: MaCrecheRoute,
   MedecinRoute: MedecinRoute,
   MedecinsRoute: MedecinsRoute,
   MedicamentsRoute: MedicamentsRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   MessagerieRoute: MessagerieRoute,
   MigrationsRoute: MigrationsRoute,
   NotificationsRoute: NotificationsRoute,
@@ -1124,9 +1372,13 @@ const rootRouteChildren: RootRouteChildren = {
   RsaiRoute: RsaiRoute,
   RsaiAnnuaireRoute: RsaiAnnuaireRoute,
   SectionsRoute: SectionsRoute,
+  SecuriteRgpdRoute: SecuriteRgpdRoute,
+  TarifsRoute: TarifsRoute,
   TransmissionsRoute: TransmissionsRoute,
   AbonnementPaiementRoute: AbonnementPaiementRoute,
   AdminAbonnementsRoute: AdminAbonnementsRoute,
+  AdminContactsRoute: AdminContactsRoute,
+  AdminGroupesRoute: AdminGroupesRoute,
   AdminLiaisonsRoute: AdminLiaisonsRoute,
   AdminLogsRoute: AdminLogsRoute,
   AdminSecuriteRoute: AdminSecuriteRoute,

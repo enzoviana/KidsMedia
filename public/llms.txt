@@ -1,0 +1,18 @@
+# Kids'Med IA
+
+> Kids'Med IA est une plateforme française de santé petite enfance qui réunit crèches, RSAI, médecins et parents autour d'un dossier partagé, sécurisé et conforme aux principes du RGPD. Elle propose des transmissions, le suivi des traitements, les documents obligatoires, un QR code d'urgence et une aide IA au signalement des symptômes. L'IA ne remplace jamais un avis médical.
+
+## Pages publiques
+- [Accueil](https://kidsmedia.vercel.app/): présentation, bénéfices, rôles, tarifs et FAQ.
+- [Fonctionnalités](https://kidsmedia.vercel.app/fonctionnalites): dossier enfant, transmissions, traitements, IA, QR d'urgence, coordination RSAI.
+- [Tarifs](https://kidsmedia.vercel.app/tarifs): formules Essentiel, Premium, Groupe territorial, RSAI, Médecin et Parent.
+- [Sécurité et RGPD](https://kidsmedia.vercel.app/securite-rgpd): accès par rôle, journalisation, droits des personnes, limites de l'IA.
+- [À propos](https://kidsmedia.vercel.app/a-propos): mission et valeurs.
+- [Contact](https://kidsmedia.vercel.app/contact): demande de démonstration ou de devis.
+
+## Informations clés
+- Public : crèches, réseaux de crèches, RSAI, médecins, parents.
+- Abonnement de groupe disponible : les crèches d'un groupe n'ont pas d'abonnement individuel.
+- Contact : contact@kidsmed.fr
+- Langue : français.
+- L'assistance IA est une aide à la vigilance, pas un diagnostic médical.

@@ -1,14 +1,48 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /fonctionnalites
+Allow: /tarifs
+Allow: /securite-rgpd
+Allow: /a-propos
+Allow: /contact
+Allow: /mentions-legales
+Allow: /confidentialite
+Allow: /cgu
+
+# Application privée et espaces authentifiés : jamais indexés.
+Disallow: /app
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /reinitialiser
+Disallow: /admin
+Disallow: /dev
+Disallow: /directeur
+Disallow: /creche
+Disallow: /rsai
+Disallow: /medecin
+Disallow: /parent
+Disallow: /enfants
+Disallow: /etablissements
+Disallow: /medecins
+Disallow: /rsai-annuaire
+Disallow: /documents
+Disallow: /documents-obligatoires
+Disallow: /messagerie
+Disallow: /notifications
+Disallow: /profil
+Disallow: /abonnement
+Disallow: /coordination
+Disallow: /affectations
+Disallow: /analyse-ia
+Disallow: /diagnostics
+Disallow: /transmissions
+Disallow: /medicaments
+Disallow: /ordonnances
+Disallow: /sections
+Disallow: /personnel
+Disallow: /ma-creche
+Disallow: /urgence
+Disallow: /migrations
+Disallow: /routes-manquantes
+
+Sitemap: https://kidsmedia.vercel.app/sitemap.xml

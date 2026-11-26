@@ -63,12 +63,15 @@ function EnfantPage() {
     }
   }, [navigate]);
   const v = { enfantId };
-  const demoE = demoEnfant(enfantId);
-  const liensR = useApiOrDemo<unknown>(specs.liensEnfant, [
+  const isDemo = !!getSession()?.demo;
+  // En session réelle, aucun parent / médecin fictif ne doit apparaître dans le dossier.
+  const demoE = isDemo ? demoEnfant(enfantId) : {};
+  const demoLiens = isDemo ? [
     ...(demoE.parents ?? []).map((p: any) => ({ _id: `p-${p.prenom}`, user: { ...p }, role: "parent" })),
     { _id: "m-1", user: { prenom: "Dr Paul", nom: "Moreau", email: "p.moreau@cabinet.fr" }, role: "medecin" },
     { _id: "c-1", user: { prenom: "Crèche", nom: "Les Petits Soleils", email: "contact@petits-soleils.fr" }, role: "creche" },
-  ], v);
+  ] : [];
+  const liensR = useApiOrDemo<unknown>(specs.liensEnfant, demoLiens, v);
   const enfantR = useApiOrDemo<any>(specs.enfant, demoE, v);
   const enf = (enfantR.data as any) ?? demoE;
   const dossierR = useApiOrDemo<unknown>(specs.docsObligEnfant, demoDossier, v, { fallbackToDemo: !!getSession()?.demo });
@@ -132,7 +135,7 @@ function EnfantPage() {
       </div>
       <div className="mt-4">
         <Panel title="Liaison & accès — crèche, parents, médecins" icon={Link2} spec={specs.liensEnfant} demo={liensR.demo} reason={liensR.reason}>
-          <LiaisonPanel enfantId={enfantId} code={demoE.codeLiaison} prenom={demoE.prenom} liens={toList(liensR.data)} />
+          <LiaisonPanel enfantId={enfantId} code={enf.codeLiaison} prenom={enf.prenom} liens={toList(liensR.data)} />
         </Panel>
       </div>
       <div className="mt-4"><VaccinPanel enfantId={enfantId} /></div>

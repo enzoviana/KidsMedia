@@ -118,6 +118,11 @@ function Page() {
                 </div>
                 <Pill tone={a.statut === "actif" ? "success" : "warning"}>{a.statut}</Pill>
               </div>
+              {(a.groupe || a.groupeId || a.herite) && (
+                <p className="rounded-lg bg-accent/60 p-3 text-sm">
+                  Abonnement de groupe : il couvre toutes les crèches rattachées. Aucun abonnement individuel n'est nécessaire.
+                </p>
+              )}
               <div className="grid gap-4 sm:grid-cols-3">
                 <Box label="Enfants inscrits" value={`${q.enfantsInscrits ?? "—"} / ${q.enfantsMax ?? "—"}`} />
                 <Box label="Utilisateurs" value={`${q.utilisateurs ?? "—"} / ${q.utilisateursMax ?? "—"}`} />
@@ -144,13 +149,22 @@ function Page() {
             const courant = planActuel === p.nom || planActuel === p.id;
             return (
               <div key={p.id} className={`rounded-2xl border bg-card p-5 ${courant ? "ring-2 ring-primary" : ""}`}>
-                <p className="font-display text-xl font-semibold">{p.nom}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-display text-xl font-semibold">{p.nom}</p>
+                  {p.categorie === "promotion" && <Pill tone="warning">Promo</Pill>}
+                  {p.categorie === "one_shot" && <Pill tone="success">One-shot</Pill>}
+                </div>
                 <p className="mb-3 text-2xl font-bold">{p.prix} €<span className="text-sm font-normal text-muted-foreground"> / mois</span></p>
+                {p.prixAnnuel ? <p className="mb-2 text-sm text-muted-foreground">ou {p.prixAnnuel} € / an{p.engagementMois ? ` · engagement ${p.engagementMois} mois` : ""}</p> : null}
+                {p.dureeMois ? <p className="mb-2 text-xs text-muted-foreground">Durée : {p.dureeMois} mois</p> : null}
+                {p.description && <p className="mb-2 text-sm text-muted-foreground">{p.description}</p>}
                 {p.joursEssai > 0 && <p className="mb-2 text-xs font-medium text-success">{p.joursEssai} jours d'essai gratuit</p>}
                 <ul className="mb-4 space-y-1 text-sm text-muted-foreground">{p.inclus.map((x) => <li key={x}>✓ {x}</li>)}</ul>
                 {courant
                   ? <Pill tone="success">Formule actuelle</Pill>
-                  : <Button className="w-full" onClick={() => navigate({ to: "/abonnement/paiement", search: { plan: p.id, nom: p.nom, periodicite: "mensuel" } })}>Choisir {p.nom}</Button>}
+                  : p.categorie === "one_shot"
+                    ? <Button variant="outline" className="w-full" disabled>Offre ponctuelle — sur devis</Button>
+                    : <Button className="w-full" onClick={() => navigate({ to: "/abonnement/paiement", search: { plan: p.id, nom: p.nom, periodicite: p.engagementMois === 12 ? "annuel" : "mensuel" } })}>Choisir {p.nom}</Button>}
               </div>
             );
           })}

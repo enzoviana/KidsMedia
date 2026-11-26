@@ -1,5 +1,5 @@
 import { Heart } from "lucide-react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -229,6 +229,9 @@ function Connexion() {
             </Button>
           </form>
           )}
+          {!step2 && <p className="mt-4 text-center text-sm text-muted-foreground">
+            Pas encore de compte ? <Link to="/inscription" className="text-primary underline">Créer mon compte</Link>
+          </p>}
           {!step2 && <div className="mt-8">
             {!showDemo ? (
               <Button type="button" variant="outline" className="w-full" onClick={() => setShowDemo(true)}>Explorer en mode démo</Button>

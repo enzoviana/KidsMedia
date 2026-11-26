@@ -14,6 +14,27 @@ import { getSession, roleToKey } from "@/lib/api";
 import { RatingButton } from "@/components/dash/coordination";
 import { Link as RouterLink } from "@tanstack/react-router";
 
+function ReferenteCell({ r }: { r: any }) {
+  const [referente, setReferente] = useState(!!r.referente);
+  const canToggle = ["admin", "dev"].includes(roleToKey(getSession()?.user.role) ?? "");
+  return (
+    <button type="button" disabled={!canToggle} title={canToggle ? (referente ? "Retirer le statut de référente" : "Désigner comme référente de secteur") : "Statut de référente"}
+      aria-label={referente ? "Référente de secteur" : "Non référente"}
+      onClick={async () => {
+        if (!canToggle) return;
+        try {
+          const res = await send("PATCH", specs.userReferente.path, { referente: !referente }, { userId: String(r._id ?? r.id) });
+          setReferente(!referente);
+          toast.success(`${!referente ? "RSAI désignée référente" : "Statut de référente retiré"}${res.demo ? " (démo)" : ""}`);
+        } catch (e) { toast.error((e as Error).message); }
+      }}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${referente ? "bg-warning/20 text-foreground" : "text-muted-foreground"} ${canToggle ? "hover:bg-accent" : "cursor-default"}`}>
+      <Star className={`h-4 w-4 ${referente ? "fill-warning text-warning" : ""}`} />
+      {referente ? "Référente" : canToggle ? "Désigner" : "—"}
+    </button>
+  );
+}
+
 function NoteCell({ r }: { r: any }) {
   const [open, setOpen] = useState(false);
   const [m, setM] = useState<{ n: number; c: number }>({ n: r.noteMoyenne ?? 0, c: r.nbAvis ?? 0 });
@@ -50,7 +71,7 @@ export const Route = createFileRoute("/rsai-annuaire")({
 });
 
 const demo: any[] = [{_id:"r1",noteMoyenne:4.6,nbAvis:12,prenom:"Nadia",nom:"Roux",etablissements:["Les Petits Soleils","La Lune Bleue"],email:"n.roux@exemple.fr",tel:"06 00 00 00 03"},{_id:"r2",noteMoyenne:3.9,nbAvis:5,prenom:"Thomas",nom:"Blanc",etablissements:["L'Étoile"],email:"t.blanc@exemple.fr",tel:"06 00 00 00 04"}];
-const cols: Col[] = [{label:"RSAI",render:(r)=><span className="font-medium">{fullName(r)}</span>},{label:"Crèches suivies",render:(r)=>(r.etablissements??[]).map((e:any)=>e.nom??e).join(", ")||"—"},{label:"Note",render:(r)=><RatingButton id={r._id} name={fullName(r)} average={r.noteMoyenne} count={r.nbAvis} />},{label:"Contact",render:(r)=><span className="text-muted-foreground">{r.email??"—"} · {r.tel??""}</span>}];
+const cols: Col[] = [{label:"RSAI",render:(r)=><span className="flex items-center gap-1.5 font-medium"><Star className={`h-4 w-4 ${r.referente ? "fill-warning text-warning" : "hidden"}`} aria-label={r.referente ? "Référente de secteur" : undefined} />{fullName(r)}</span>},{label:"Référente",render:(r)=><ReferenteCell r={r} />},{label:"Crèches suivies",render:(r)=>(r.etablissements??[]).map((e:any)=>e.nom??e).join(", ")||"—"},{label:"Note",render:(r)=><RatingButton id={r._id} name={fullName(r)} average={r.noteMoyenne} count={r.nbAvis} />},{label:"Contact",render:(r)=><span className="text-muted-foreground">{r.email??"—"} · {r.tel??""}</span>}];
 
 const crud: Crud = {"entity": "un RSAI", "base": "/users", "extra": {"role": "rsai"}, "fields": [{"name": "prenom", "label": "Prénom", "type": "text", "required": true}, {"name": "nom", "label": "Nom", "type": "text", "required": true}, {"name": "email", "label": "E-mail", "type": "email", "required": true}, {"name": "tel", "label": "Téléphone", "type": "tel"}]};
 

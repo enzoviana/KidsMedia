@@ -9,8 +9,6 @@ import { Pill, fullName } from "./widgets";
 import { send } from "@/lib/mutate";
 import { useNavigate } from "@tanstack/react-router";
 
-const randCode = (p: string) => `${(p || "ENF").slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
 /** Bouton « Scanner un QR code » par caméra (crèche, médecin, RSAI). */
 export function ScanQrButton() {
   const [open, setOpen] = useState(false);
@@ -80,21 +78,21 @@ export interface Lien {
 
 /** Encart Liaison & Accès sur le dossier enfant. */
 export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initialLiens }: { enfantId: string; code?: string; prenom?: string; liens: Lien[] }) {
-  const [code, setCode] = useState(initialCode ?? randCode(prenom ?? ""));
+  const [code, setCode] = useState(initialCode ?? "");
   const [qr, setQr] = useState("");
   const [liens, setLiens] = useState<Lien[]>(initialLiens);
   const [adding, setAdding] = useState(false);
   const [revoke, setRevoke] = useState<Lien | null>(null);
-  useEffect(() => { setCode(initialCode ?? randCode(prenom ?? "")); }, [initialCode, prenom]);
+  useEffect(() => { setCode(initialCode ?? ""); }, [initialCode, prenom]);
   useEffect(() => { setLiens(initialLiens); }, [initialLiens.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    try { setQr(qrDataUrl(`kidsmed://lier/${code}`, 180)); } catch { setQr(""); }
+    try { setQr(code ? qrDataUrl(`kidsmed://lier/${code}`, 180) : ""); } catch { setQr(""); }
   }, [code]);
 
   async function regen() {
     try {
       const r = await send<any>("POST", `/enfants/${enfantId}/regenerer-code`);
-      setCode(r.data?.code ?? randCode(prenom ?? ""));
+      setCode(r.data?.code ?? "");
       toast.success(r.demo ? "Nouveau code généré (mode démo)" : "Nouveau code généré — l'ancien n'est plus valable");
     } catch (e) { toast.error((e as Error).message); }
   }

@@ -4,6 +4,7 @@ import { DashboardShell } from "@/components/dash/shell";
 import { DataPanel, Pill } from "@/components/dash/widgets";
 import { Button } from "@/components/ui/button";
 import { specs } from "@/lib/specs";
+import { getSession, roleToKey } from "@/lib/api";
 import { SecuriteEtab } from "@/components/dash/securite-etab";
 
 export const Route = createFileRoute("/etablissements/$etablissementId")({
@@ -30,6 +31,10 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 function EtabPage() {
   const { etablissementId } = Route.useParams();
   const v = { etablissementId };
+  const role = roleToKey(getSession()?.user.role);
+  // Le directeur territorial consulte les crèches ; les réglages de sécurité
+  // restent réservés à la crèche et à l'administration.
+  const peutSecurite = role !== "directeur";
   return (
     <DashboardShell title="Fiche crèche" actions={<Button variant="outline" asChild><Link to="/etablissements"><ArrowLeft className="mr-1 h-4 w-4" />Retour</Link></Button>}>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -59,7 +64,7 @@ function EtabPage() {
           )}
         </DataPanel>
       </div>
-      <SecuriteEtab etablissementId={etablissementId} />
+      {peutSecurite && <SecuriteEtab etablissementId={etablissementId} />}
     </DashboardShell>
   );
 }

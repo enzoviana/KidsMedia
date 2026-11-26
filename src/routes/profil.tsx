@@ -108,7 +108,8 @@ function InfoForm({ u }: { u: any }) {
 function Profil() {
   const [busy, setBusy] = useState(false);
   const sessionUser = getSession()?.user;
-  const profileFallback = { ...demo, ...(sessionUser as any) };
+  // En session réelle, aucune valeur de démonstration ne complète le profil.
+  const profileFallback = getSession()?.demo ? { ...demo, ...(sessionUser as any) } : { ...(sessionUser as any) };
   async function changePwd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);

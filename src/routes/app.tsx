@@ -189,8 +189,17 @@ function Register({ onBack, initialEmail = "", invitationToken = "" }: { onBack:
           e.preventDefault(); if (f.password.length < 8) { toast.error("Le mot de passe doit faire au moins 8 caractères."); return; }
           setBusy(true);
           try {
-            const r = await send<{ invitationsAcceptees?: number }>("POST", "/auth/register", { ...f, invitationToken: invitationToken || undefined, role: "parent", codeLiaison: f.code || undefined });
-            if (r.data?.invitationsAcceptees) toast.success(`${r.data.invitationsAcceptees} dossier(s) rattaché(s) à votre compte`);
+            // Appel direct : « send » simule les écritures sans session, ce qui
+            // empêchait réellement la création du compte depuis le lien d'invitation.
+            const res = await fetch(`${API_BASE}/auth/register`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...f, invitationToken: invitationToken || undefined, role: "parent", codeLiaison: f.code || undefined }),
+            });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok || j?.success === false) throw new Error(j?.error ?? j?.message ?? "Création du compte impossible.");
+            const acceptees = Number(j?.data?.invitationsAcceptees ?? j?.invitationsAcceptees ?? 0);
+            if (acceptees) toast.success(`${acceptees} dossier(s) rattaché(s) à votre compte`);
             setOk(true);
           } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
         }}>

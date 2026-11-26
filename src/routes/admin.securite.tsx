@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { specs } from "@/lib/specs";
 import { send } from "@/lib/mutate";
-import { toList } from "@/lib/api";
+import { getSession, toList } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
 
 export const Route = createFileRoute("/admin/securite")({
@@ -51,12 +51,14 @@ function plagesLabel(plages: { jour: number; debut: string; fin: string }[] | un
 
 function Page() {
   const qc = useQueryClient();
+  const isDemo = !!getSession()?.demo;
   const r = useApiOrDemo<any>(specs.accesRegles, { defauts: demoDefauts, etablissements: demoEtablissements });
-  const [defauts, setDefauts] = useState(demoDefauts);
-  const [etabs, setEtabs] = useState<any[]>(demoEtablissements);
+  const [defauts, setDefauts] = useState(isDemo ? demoDefauts : { rayonMetres: 50, blocageHorsZone: false, plagesHoraires: [] as { jour: number; debut: string; fin: string }[] });
+  const [etabs, setEtabs] = useState<any[]>(isDemo ? demoEtablissements : []);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (r.data?.defauts) setDefauts(r.data.defauts);
+    // Ne jamais remplacer des valeurs réelles par une structure vide issue d'un échec.
+    if (r.data?.defauts?.rayonMetres != null) setDefauts(r.data.defauts);
     if (Array.isArray(r.data?.etablissements)) setEtabs(r.data.etablissements);
   }, [r.data]);
 

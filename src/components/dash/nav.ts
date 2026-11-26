@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { LinkProps } from "@tanstack/react-router";
 import {
   LayoutDashboard, Baby, LayoutGrid, Users, NotebookPen, Pill, FileText, ClipboardCheck, MessageSquare, Bell, Star,
-  Stethoscope, HeartPulse, Building2, BrainCircuit, ScrollText, UserCog, CreditCard, Tag, ShieldAlert, Bug, LifeBuoy, Database, Network, Link2, Wallet, Sparkles, Lock, Heart, MapPinned, Gauge, FileLock2, DatabaseZap, MailOpen,
+  Stethoscope, HeartPulse, Building2, BrainCircuit, ScrollText, UserCog, CreditCard, Tag, ShieldAlert, Bug, LifeBuoy, Database, Network, Link2, Wallet, Sparkles, Lock, Heart, MapPinned, Gauge, FileLock2, DatabaseZap, MailOpen, Mail,
 } from "lucide-react";
 import type { RoleKey } from "@/lib/api";
 
@@ -69,11 +69,25 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
     ]},
     com,
   ],
+  directeur: [
+    { label: "Supervision", items: [
+      { label: "Tableau de bord", icon: LayoutDashboard, to: "/directeur" },
+      { label: "Mes crèches", icon: Building2, to: "/etablissements" },
+      { label: "Enfants", icon: Baby, to: "/enfants" },
+      { label: "RSAI", icon: HeartPulse, to: "/rsai-annuaire" },
+      { label: "Abonnement du groupe", icon: CreditCard, to: "/abonnement" },
+    ]},
+    { label: "Communication", items: [
+      { label: "Messagerie", icon: MessageSquare, to: "/messagerie" },
+      { label: "Notifications", icon: Bell, to: "/notifications" },
+    ]},
+  ],
   admin: [
     { label: "Général", items: [
       { label: "Tableau de bord", icon: LayoutDashboard, to: "/admin" },
       { label: "Utilisateurs", icon: UserCog, to: "/admin/utilisateurs" },
       { label: "Crèches", icon: Building2, to: "/etablissements" },
+      { label: "Groupes territoriaux", icon: Network, to: "/admin/groupes" },
       { label: "Enfants", icon: Baby, to: "/enfants" },
       { label: "Liaisons", icon: Link2, to: "/admin/liaisons" },
       { label: "Supervision & RSAI", icon: MapPinned, to: "/coordination" },
@@ -85,6 +99,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
       { label: "Tarifs", icon: Tag, to: "/admin/tarifs" },
       { label: "Journaux", icon: ShieldAlert, to: "/admin/logs" },
       { label: "Sécurité d'accès", icon: Lock, to: "/admin/securite" },
+      { label: "Messages du site", icon: Mail, to: "/admin/contacts" },
     ]},
     { label: "Communication", items: com.items.filter((i) => i !== abo) },
   ],
@@ -101,6 +116,8 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
     { label: "Console", items: [
       { label: "Tableau de bord", icon: LayoutDashboard, to: "/dev" },
       { label: "Utilisateurs", icon: UserCog, to: "/admin/utilisateurs" },
+      { label: "Groupes territoriaux", icon: Network, to: "/admin/groupes" },
+      { label: "Messages du site", icon: Mail, to: "/admin/contacts" },
       { label: "Clés API & messages", icon: Lock, to: "/dev/configuration" },
       { label: "Supervision & RSAI", icon: MapPinned, to: "/coordination" },
       { label: "Performance", icon: Gauge, to: "/dev/performance" },

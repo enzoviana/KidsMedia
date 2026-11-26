@@ -4,6 +4,7 @@ import { ListPage, type Col } from "@/components/dash/list-page";
 import { EnfantLink, type Crud } from "@/components/dash/crud";
 import { Pill, fullName, fmtDate } from "@/components/dash/widgets";
 import { specs } from "@/lib/specs";
+import { getSession, roleToKey } from "@/lib/api";
 
 export const Route = createFileRoute("/etablissements/")({
   head: () => ({
@@ -20,11 +21,23 @@ export const Route = createFileRoute("/etablissements/")({
 });
 
 const demo: any[] = [{_id:"demo-soleil",nom:"Crèche Les Petits Soleils",ville:"Lyon",capacite:48,actif:true},{_id:"demo-lune",nom:"Crèche La Lune Bleue",ville:"Paris",capacite:36,actif:true},{_id:"demo-etoile",nom:"Micro-crèche L'Étoile",ville:"Nantes",capacite:10,actif:false}];
-const cols: Col[] = [{label:"Crèche",render:(r)=><Link to="/etablissements/$etablissementId" params={{etablissementId:String(r._id??r.id??"")}} className="font-medium text-primary hover:underline">{r.nom??"—"}</Link>},{label:"Ville",render:(r)=>r.ville??r.adresse?.ville??"—"},{label:"Capacité",render:(r)=>r.capacite??"—"},{label:"Statut",render:(r)=><Pill tone={r.actif===false?"danger":"success"}>{r.actif===false?"Inactif":"Actif"}</Pill>}];
+const cols: Col[] = [{label:"Crèche",render:(r)=><Link to="/etablissements/$etablissementId" params={{etablissementId:String(r._id??r.id??"")}} className="font-medium text-primary hover:underline">{r.nom??"—"}</Link>},{label:"Ville",render:(r)=>r.ville??r.adresse?.ville??"—"},{label:"Capacité",render:(r)=>r.capacite??"—"},{label:"Groupe",render:(r)=>r.groupe?.nom??"—"},{label:"Statut",render:(r)=><Pill tone={r.actif===false?"danger":"success"}>{r.actif===false?"Inactif":"Actif"}</Pill>}];
 
-const crud: Crud = {"entity": "une crèche", "base": "/etablissements", "view": "etablissement", "fields": [{"name": "nom", "label": "Nom", "type": "text", "required": true}, {"name": "adresse", "label": "Adresse", "type": "address", "required": true}, {"name": "capacite", "label": "Capacité", "type": "number"}, {"name": "telephone", "label": "Téléphone", "type": "tel"}, {"name": "email", "label": "E-mail", "type": "email"}, {"name": "description", "label": "Description", "type": "textarea"}, {"name": "horairesOuverture", "label": "Horaires d'ouverture", "type": "text"}]};
+const crud: Crud = { entity: "une crèche", base: "/etablissements", view: "etablissement", fields: [
+  { name: "nom", label: "Nom", type: "text", required: true },
+  { name: "adresse", label: "Adresse", type: "address", required: true },
+  { name: "capacite", label: "Capacité", type: "number" },
+  { name: "telephone", label: "Téléphone", type: "tel" },
+  { name: "email", label: "E-mail", type: "email" },
+  { name: "groupeId", label: "Groupe territorial", lookup: "groupe" },
+  { name: "description", label: "Description", type: "textarea" },
+  { name: "horairesOuverture", label: "Horaires d'ouverture", type: "text" },
+] };
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Crèches" spec={specs.etabs} demo={demo} cols={cols} icon={Building2} />;
+  const role = roleToKey(getSession()?.user.role);
+  // Le directeur territorial consulte ses crèches ; la gestion reste réservée à l'administration.
+  const peutGerer = role === "admin" || role === "dev";
+  return <ListPage crud={peutGerer ? crud : undefined} title="Crèches" spec={specs.etabs} demo={demo} cols={cols} icon={Building2} />;
 }

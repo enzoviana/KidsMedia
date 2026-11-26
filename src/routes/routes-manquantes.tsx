@@ -22,7 +22,7 @@ export const Route = createFileRoute("/routes-manquantes")({
   component: Page,
 });
 
-const order: RoleKey[] = ["creche", "rsai", "medecin", "admin", "dev", "parent"];
+const order: RoleKey[] = ["creche", "rsai", "medecin", "directeur", "admin", "dev", "parent"];
 
 function Page() {
   const [back, setBack] = useState<RoleKey | null>(null);

@@ -28,19 +28,26 @@ export function validSchedule(debut: string, fin: string, jours: number[]) {
 /** Absent endpoints are deliberately simulated, never sent to an unrelated real route. */
 export async function writeSpec(spec: RouteSpec, body?: unknown, vars?: Record<string, string | undefined>) {
   if (spec.method === "GET") throw new Error("Une lecture ne peut pas être utilisée comme écriture.");
+  const session = getSession();
+  const sessionReelle = !!session && !session.demo;
   if (/\s/.test(spec.path)) {
+    if (sessionReelle) throw new Error("Cette opération n'est pas disponible sur le serveur.");
     await new Promise((r) => setTimeout(r, 250));
     return { demo: true, data: body, reason: "Exigence décrite en texte, pas une URL appelable" };
   }
   try {
     return await send<any>(spec.method, spec.path, body, vars);
   } catch (e) {
+    // En session réelle, une écriture échouée ne doit jamais être simulée ni
+    // ajoutée aux listes : l'utilisateur voit l'erreur du serveur.
+    if (sessionReelle) throw e;
     return { demo: true, data: body, reason: `Erreur API sur ${spec.method} ${spec.path} : ${(e as Error).message}` };
   }
 }
 
 type Store = { documents: any[]; notes: any[]; echanges: any[]; avis: any[]; affectations: any[]; demandes: any[] };
-const initial: Store = {
+const vide: Store = { documents: [], notes: [], echanges: [], avis: [], affectations: [], demandes: [] };
+const demoInitial: Store = {
   documents: [],
   notes: [
     { _id: "note-1", enfantId: "demo-lea", contenu: "Léa a bien mangé et participé aux activités.", visibilite: "publique", auteurNom: "Les Petits Soleils", auteurRole: "creche", createdAt: "2026-10-08" },
@@ -51,22 +58,24 @@ const initial: Store = {
   affectations: [{ _id: "aff-1", rsai: rsaChoices[0], etablissement: etabChoices[0], jours: [1, 2, 3, 4, 5], debut: "08:00", fin: "18:00", dateDebut: "2026-09-01", statut: "active" }],
   demandes: [{ _id: "dem-1", etablissement: etabChoices[1], motif: "Accompagnement pour un nouveau PAI", dateSouhaitee: "2026-10-15", statut: "en_attente" }],
 };
-let state = initial;
-let owner: string | undefined;
+const etatInitial = (demo: boolean): Store => (demo ? demoInitial : vide);
+const sessionInitiale = getSession();
+let state: Store = etatInitial(!!sessionInitiale?.demo);
+let owner: string | undefined = sessionInitiale?.demo ? "demo" : sessionInitiale?.user?._id ?? sessionInitiale?.user?.id;
 const listeners = new Set<() => void>();
 export function updateCoordination(key: keyof Store, update: (rows: any[]) => any[]) {
   const session = getSession();
-  const nextOwner = session?.demo ? "demo" : session?.user._id;
-  if (owner !== nextOwner) { state = initial; owner = nextOwner; }
+  const nextOwner = session?.demo ? "demo" : session?.user?._id ?? session?.user?.id;
+  if (owner !== nextOwner) { state = etatInitial(!!session?.demo); owner = nextOwner; }
   state = { ...state, [key]: update(state[key]) };
   listeners.forEach((fn) => fn());
 }
 export function useCoordination() {
   useEffect(() => {
     const session = getSession();
-    const nextOwner = session?.demo ? "demo" : session?.user._id ?? session?.user.id;
-    if (owner !== nextOwner) { state = initial; owner = nextOwner; listeners.forEach((fn) => fn()); }
+    const nextOwner = session?.demo ? "demo" : session?.user?._id ?? session?.user?.id;
+    if (owner !== nextOwner) { state = etatInitial(!!session?.demo); owner = nextOwner; listeners.forEach((fn) => fn()); }
   }, []);
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; }, () => state, () => initial);
+  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; }, () => state, () => vide);
 }
 export const localId = () => `demo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

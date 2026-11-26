@@ -11,7 +11,7 @@ import { send } from "@/lib/mutate";
 import { demoEnfants } from "@/lib/demo-enfants";
 import { etabChoices, rsaChoices } from "@/lib/coordination";
 
-export type LookupKind = "enfant" | "etablissement" | "rsai" | "medecin" | "user";
+export type LookupKind = "enfant" | "etablissement" | "rsai" | "medecin" | "user" | "groupe";
 
 export interface LookupOption { id: string; label: string; hint?: string | undefined }
 
@@ -20,19 +20,20 @@ const nameOf = (o: any) => [o?.prenom, o?.nom].filter(Boolean).join(" ") || o?.n
 
 const demoMedecins = [{ _id: "m1", prenom: "Dr Paul", nom: "Moreau", specialite: "Pédiatre" }, { _id: "m2", prenom: "Dr Sarah", nom: "Lambert", specialite: "Généraliste" }];
 const demoUsers = [{ id: "u1", prenom: "Claire", nom: "Durand", role: "parent" }, { id: "m1", prenom: "Dr Paul", nom: "Moreau", role: "medecin" }, { id: "r1", prenom: "Nadia", nom: "Roux", role: "rsai" }];
+const demoGroupes = [{ id: "g1", nom: "Groupe Île-de-France", description: "" }, { id: "g2", nom: "Groupe Bourgogne", description: "" }];
 
-/** Charge la liste nommée correspondant au type demandé (enfants, crèches, RSAI, médecins, comptes). */
+/** Charge la liste nommée correspondant au type demandé (enfants, crèches, RSAI, médecins, comptes, groupes). */
 export function useLookupOptions(kind: LookupKind): LookupOption[] {
   const role = roleToKey(getSession()?.user.role);
   const spec = kind === "enfant"
     ? (role === "parent" ? specs.parentEnfants : role === "creche" || role === "rsai" ? specs.enfantsEtab : specs.enfants)
-    : kind === "etablissement" ? specs.etabs : kind === "rsai" ? specs.rsais : kind === "user" ? specs.messageDestinataires : specs.medecins;
-  const demo = kind === "enfant" ? demoEnfants : kind === "etablissement" ? etabChoices : kind === "rsai" ? rsaChoices : kind === "user" ? demoUsers : demoMedecins;
+    : kind === "etablissement" ? specs.etabs : kind === "groupe" ? specs.groupes : kind === "rsai" ? specs.rsais : kind === "user" ? specs.messageDestinataires : specs.medecins;
+  const demo = kind === "enfant" ? demoEnfants : kind === "etablissement" ? etabChoices : kind === "groupe" ? demoGroupes : kind === "rsai" ? rsaChoices : kind === "user" ? demoUsers : demoMedecins;
   const r = useApiOrDemo<unknown>(spec, demo);
   return useMemo(() => toList(r.data).map((o: any) => ({
     id: idOf(o),
     label: nameOf(o),
-    hint: kind === "enfant" ? (o.section?.nom ?? o.section ?? undefined) : kind === "etablissement" ? (o.ville ?? o.adresse?.ville) : kind === "medecin" ? o.specialite : kind === "user" ? o.role : undefined,
+    hint: kind === "enfant" ? (o.section?.nom ?? o.section ?? undefined) : kind === "etablissement" ? (o.ville ?? o.adresse?.ville) : kind === "groupe" ? `${o.nbEtablissements ?? o.etablissements?.length ?? 0} crèche(s)` : kind === "medecin" ? o.specialite : kind === "user" ? o.role : undefined,
   })).filter((o) => o.id), [r.data, kind]);
 }
 
@@ -58,7 +59,7 @@ export function LookupField({ kind, name, id, required, defaultValue, placeholde
   const selected = options.find((o) => o.id === value);
   const text = query ?? selected?.label ?? "";
   const list = options.filter((o) => !query || norm(`${o.label} ${o.hint ?? ""}`).includes(norm(query))).slice(0, 50);
-  const ph = placeholder ?? { enfant: "Tapez le nom de l'enfant…", etablissement: "Tapez le nom de la crèche…", rsai: "Tapez le nom de la RSAI…", medecin: "Tapez le nom du médecin…", user: "Tapez le nom du destinataire…" }[kind];
+  const ph = placeholder ?? { enfant: "Tapez le nom de l'enfant…", etablissement: "Tapez le nom de la crèche…", groupe: "Tapez le nom du groupe…", rsai: "Tapez le nom de la RSAI…", medecin: "Tapez le nom du médecin…", user: "Tapez le nom du destinataire…" }[kind];
 
   async function createEtablissement() {
     const nom = newEtab.nom.trim();

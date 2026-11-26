@@ -47,6 +47,7 @@ const ACCENTS: Record<RoleKey, string> = {
   creche: "#2f9e5f",
   rsai: "#2f7dd1",
   medecin: "#d6417f",
+  directeur: "#5b4b8a",
   parent: "#e07a2b",
   admin: "#3b4252",
   dev: "#3d8f87",

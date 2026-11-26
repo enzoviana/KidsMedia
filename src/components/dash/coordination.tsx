@@ -45,9 +45,14 @@ export function RatingButton({ id, name, target = "rsai", average = 0, count = 0
 
 export function DocumentAlerts({ enfantId }: { enfantId?: string }) {
   const store = useCoordination();
-  const docs = [...store.documents, ...demoDocuments].filter((d) => !enfantId || d.enfant?._id === enfantId).filter((d, i, all) => all.findIndex((x) => x.type === d.type && x.enfant?._id === d.enfant?._id) === i);
-  const demo = docs.filter((d) => documentEtat(d) !== "valide").map((d) => ({ ...d, motif: documentEtat(d), documentId: d._id }));
-  if (!docs.some((d) => d.type === "Certificat médical d'aptitude")) demo.push({ _id: "missing-cert", type: "Certificat médical d'aptitude", enfant: { _id: enfantId ?? "demo-lea", prenom: enfantId === "demo-noah" ? "Noah" : "Léa", nom: enfantId === "demo-noah" ? "Bernard" : "Martin" }, statut: "manquant", nom: "", createdAt: "", dateValidite: "", motif: "manquant", documentId: "" });
+  const isDemo = !!getSession()?.demo;
+  const docs = (isDemo ? [...store.documents, ...demoDocuments] : store.documents)
+    .filter((d) => !enfantId || d.enfant?._id === enfantId)
+    .filter((d, i, all) => all.findIndex((x) => x.type === d.type && x.enfant?._id === d.enfant?._id) === i);
+  const demo = isDemo
+    ? docs.filter((d) => documentEtat(d) !== "valide").map((d) => ({ ...d, motif: documentEtat(d), documentId: d._id }))
+    : [];
+  if (isDemo && !docs.some((d) => d.type === "Certificat médical d'aptitude")) demo.push({ _id: "missing-cert", type: "Certificat médical d'aptitude", enfant: { _id: enfantId ?? "demo-lea", prenom: enfantId === "demo-noah" ? "Noah" : "Léa", nom: enfantId === "demo-noah" ? "Bernard" : "Martin" }, statut: "manquant", nom: "", createdAt: "", dateValidite: "", motif: "manquant", documentId: "" });
   const r = useApiOrDemo<unknown>(specs.alertesDocuments, demo, enfantId ? { enfantId } : undefined);
   const alerts = r.demo ? demo : toList(r.data);
   const labels: Record<string, string> = { manquant: "Manquant", expire: "Expiré", expiration_proche: "Expire bientôt", rejete: "Rejeté" };

@@ -48,6 +48,7 @@ function Page() {
               <Row k="Qualification" v={r.qualification ?? "—"} />
               <Row k="E-mail" v={r.email ?? "—"} />
               <Row k="Téléphone" v={r.telephone ?? r.tel ?? "—"} />
+              <Row k="Référente de secteur" v={r.referente ? <span className="inline-flex items-center gap-1 text-warning"><Star className="h-4 w-4 fill-warning" />Oui</span> : "Non"} />
             </div>
             <div className="rounded-xl bg-accent/50 p-4">
               <p className="text-xs text-muted-foreground">Note moyenne</p>

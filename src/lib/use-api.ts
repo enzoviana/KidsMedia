@@ -10,7 +10,23 @@ export interface ApiResult<T> {
   loading?: boolean;
 }
 
-/** vars : paramètres de chemin supplémentaires (ex. { enfantId }) — prioritaires sur ceux de l'utilisateur. */
+/** Forme vide respectant la structure attendue : tableaux vides, objets sans valeurs. */
+function emptyLike<T>(demo: T): T {
+  if (Array.isArray(demo)) return [] as unknown as T;
+  if (demo && typeof demo === "object") {
+    const vide: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(demo as Record<string, unknown>)) vide[k] = emptyLike(v);
+    return vide as T;
+  }
+  return null as unknown as T;
+}
+
+/**
+ * Charge une route API. Pour toute session réelle (hors mode démo), aucune donnée
+ * fictive n'est injectée : en cas d'erreur, l'interface reçoit une valeur vide et
+ * affiche son état « aucune donnée », jamais un faux dossier.
+ * vars : paramètres de chemin supplémentaires (ex. { enfantId }) — prioritaires sur ceux de l'utilisateur.
+ */
 export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, string | undefined>, opts?: { refetchInterval?: number; fallbackToDemo?: boolean }) {
   const q = useQuery<ApiResult<T>>({
     queryKey: ["api", spec.id, vars ?? null],
@@ -21,11 +37,12 @@ export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, 
     queryFn: async () => {
       const at = new Date().toLocaleTimeString("fr-FR");
       const first = getSession();
-      const realOnly = opts?.fallbackToDemo === false && !!first && !first.demo;
+      const realOnly = !!first && !first.demo;
+      const allowDemo = !realOnly && opts?.fallbackToDemo !== false;
       const fail = (d: Omit<Diagnostic, "at">, reason: string): ApiResult<T> => {
         setDiag(spec.id, { ...d, at });
-        if (realOnly) return { data: [] as unknown as T, demo: false, reason };
-        return { data: demo, demo: true, reason };
+        if (allowDemo) return { data: demo, demo: true, reason };
+        return { data: emptyLike(demo), demo: false, reason };
       };
       // La session peut être complétée par /auth/me et /etablissements : il faut la
       // relire AVANT de construire le chemin, sinon le premier chargement part avec
@@ -54,7 +71,8 @@ export function useApiOrDemo<T>(spec: RouteSpec, demo: T, vars?: Record<string, 
       }
     },
   });
-  const sessionDemo = !!getSession()?.demo;
-  const initial = opts?.fallbackToDemo === false && !sessionDemo ? ([] as unknown as T) : demo;
+  const session = getSession();
+  const allowDemo = !!session?.demo && opts?.fallbackToDemo !== false;
+  const initial = allowDemo ? demo : emptyLike(demo);
   return q.data ?? { data: initial, demo: false, reason: undefined, loading: true };
 }

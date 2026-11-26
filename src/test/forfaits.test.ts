@@ -15,4 +15,11 @@ describe("forfaitsPourRole", () => {
   it("une crèche ne voit pas les forfaits RSAI", () => {
     expect(forfaitsPourRole(rows, "creche").map((o) => o.id)).toEqual(["a", "c"]);
   });
+  it("applique le prix promotionnel et conserve la catégorie de l'offre", () => {
+    const promotions = [
+      { _id: "p", nom: "Promo annuelle", roleCible: "directeur", categorie: "promotion", prixMensuel: 299, prixPromoMensuel: 249, prixAnnuel: 2990, engagementMois: 12, actif: true },
+    ];
+    const [offre] = forfaitsPourRole(promotions, "directeur");
+    expect(offre).toMatchObject({ id: "p", prix: 249, prixAnnuel: 2990, categorie: "promotion", engagementMois: 12 });
+  });
 });

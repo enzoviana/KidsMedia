@@ -12,6 +12,8 @@ if (typeof window !== "undefined") {
 }
 
 const DISMISS = "kidsmed_install_dismissed";
+/** Le site vitrine reste sobre : pas de fenêtre d'installation sur les pages publiques. */
+const MARKETING_PATHS = new Set(["/", "/fonctionnalites", "/tarifs", "/securite-rgpd", "/a-propos", "/contact", "/mentions-legales", "/confidentialite", "/cgu"]);
 export const isStandalone = () => typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true);
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
@@ -48,7 +50,7 @@ export function MobileInstallPrompt() {
   const [ios, setIos] = useState(false);
   const [, tick] = useState(0);
   useEffect(() => {
-    if (!isMobile() || isStandalone() || localStorage.getItem(DISMISS)) return;
+    if (!isMobile() || isStandalone() || MARKETING_PATHS.has(window.location.pathname) || localStorage.getItem(DISMISS)) return;
     setIos(isIos());
     const t = setTimeout(() => setOpen(true), 1500);
     const l = () => tick((x) => x + 1);

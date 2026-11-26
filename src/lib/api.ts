@@ -1,6 +1,6 @@
 export const API_BASE: string = (import.meta.env["VITE_API_URL"] as string | undefined) ?? "https://backendkids.onrender.com/api";
 
-export type RoleKey = "creche" | "rsai" | "medecin" | "admin" | "dev" | "parent";
+export type RoleKey = "creche" | "rsai" | "medecin" | "directeur" | "admin" | "dev" | "parent";
 
 export interface ApiUser {
   id?: string;
@@ -47,6 +47,10 @@ export function roleToKey(role?: string): RoleKey | null {
       return "rsai";
     case "medecin":
       return "medecin";
+    case "directeur":
+    case "directeur_territorial":
+    case "direction_territoriale":
+      return "directeur";
     case "parent":
       return "parent";
     case "admin":

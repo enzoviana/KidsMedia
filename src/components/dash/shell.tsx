@@ -16,8 +16,8 @@ import { specs } from "@/lib/specs";
 import { TicketButton, UserAvatar, useSessionUser } from "./beta";
 import { InstallQrButton } from "@/components/pwa/install";
 
-export const roleLabels: Record<RoleKey, string> = { creche: "Crèche", rsai: "RSAI", medecin: "Médecin", admin: "Administration", dev: "Développeur", parent: "Parent" };
-export const roleHome: Record<RoleKey, "/creche" | "/rsai" | "/medecin" | "/admin" | "/dev" | "/parent"> = { parent: "/parent", creche: "/creche", rsai: "/rsai", medecin: "/medecin", admin: "/admin", dev: "/dev" };
+export const roleLabels: Record<RoleKey, string> = { creche: "Crèche", rsai: "RSAI", medecin: "Médecin", directeur: "Direction territoriale", admin: "Administration", dev: "Développeur", parent: "Parent" };
+export const roleHome: Record<RoleKey, "/creche" | "/rsai" | "/medecin" | "/directeur" | "/admin" | "/dev" | "/parent"> = { parent: "/parent", creche: "/creche", rsai: "/rsai", medecin: "/medecin", directeur: "/directeur", admin: "/admin", dev: "/dev" };
 
 export interface NavGroup { label: string; items: { label: string; icon: LucideIcon; anchor: string; badge?: string }[] }
 import { roleNav } from "./nav";
