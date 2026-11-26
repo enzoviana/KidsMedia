@@ -11,7 +11,10 @@ describe("SEO du site vitrine", () => {
     const head = seoHead({ title: "Titre", description: "Description", path: "/contact" });
     expect(head.links).toContainEqual({ rel: "canonical", href: absoluteUrl("/contact") });
     expect(head.meta).toContainEqual({ property: "og:title", content: "Titre" });
-    expect(head.meta).toContainEqual({ name: "robots", content: "index, follow, max-image-preview:large" });
+    expect(head.meta).toContainEqual({
+      name: "robots",
+      content: "index, follow, max-image-preview:large",
+    });
   });
 
   it("génère un balisage FAQ conforme à schema.org", () => {

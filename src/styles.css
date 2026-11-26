@@ -208,3 +208,31 @@
 [data-theme="dev"] { letter-spacing: 0; }
 .bg-brand-gradient { background-image: var(--gradient-brand); }
 @utility no-scrollbar { scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
+
+/* ---------- Site vitrine : micro-mouvements légers, sans JS ---------- */
+@keyframes marketing-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes marketing-float {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rotate, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--float-rotate, 0deg)); }
+}
+@keyframes marketing-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.marketing-site { scroll-behavior: smooth; }
+.marketing-site ::selection { background: #ffd3e4; color: #0b1020; }
+.marketing-marquee { animation: marketing-marquee 32s linear infinite; }
+.marketing-float { animation: marketing-float 7s ease-in-out infinite; }
+.marketing-glow { animation: marketing-glow 9s ease-in-out infinite; }
+.marketing-site .card-tilt { transition: transform 300ms ease, box-shadow 300ms ease; }
+.marketing-site .card-tilt:hover { transform: translateY(-4px) rotate(-0.35deg); box-shadow: 0 30px 60px -30px rgba(11, 16, 32, 0.35); }
+.marketing-site .underline-grow { background-image: linear-gradient(currentColor, currentColor); background-size: 0% 1px; background-position: 0 100%; background-repeat: no-repeat; transition: background-size 250ms ease; }
+.marketing-site .underline-grow:hover { background-size: 100% 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site { scroll-behavior: auto; }
+  .marketing-marquee, .marketing-float, .marketing-glow { animation: none !important; }
+  .marketing-site .card-tilt:hover { transform: none; }
+}

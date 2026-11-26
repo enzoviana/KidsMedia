@@ -42,7 +42,10 @@ export function seoHead({
   const meta: Record<string, string>[] = [
     { title },
     { name: "description", content: description },
-    { name: "robots", content: noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large" },
+    {
+      name: "robots",
+      content: noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large",
+    },
     { name: "author", content: SITE_NAME },
     { property: "og:site_name", content: SITE_NAME },
     { property: "og:locale", content: "fr_FR" },
