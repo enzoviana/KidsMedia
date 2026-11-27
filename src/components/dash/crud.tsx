@@ -152,19 +152,101 @@ export function FormDialog({ open, onOpenChange, title, description, fields, ini
   );
 }
 
+/** Champs internes jamais utiles à l'utilisateur dans une fiche de détail. */
+const HIDDEN_DETAIL_KEYS = new Set(["__v", "password", "_id", "id"]);
+
+const DETAIL_LABELS: Record<string, string> = {
+  nom: "Nom", prenom: "Prénom", email: "E-mail", tel: "Téléphone", telephone: "Téléphone",
+  role: "Rôle", statut: "Statut", type: "Type", titre: "Titre", sujet: "Sujet", message: "Message", contenu: "Contenu",
+  description: "Description", commentaire: "Commentaire", note: "Note", niveau: "Niveau", motif: "Motif",
+  createdAt: "Créé le", updatedAt: "Mis à jour le", date: "Date", dateNaissance: "Naissance",
+  dateDebut: "Début", dateFin: "Fin", dateValidite: "Valide jusqu'au", validiteMois: "Validité (mois)",
+  enfant: "Enfant", etablissement: "Crèche", user: "Utilisateur", medecin: "Médecin", expediteur: "Expéditeur",
+  destinataire: "Destinataire", medicaments: "Médicaments", posologie: "Posologie", frequence: "Fréquence",
+  specialite: "Spécialité", rpps: "N° RPPS", adresse: "Adresse", ville: "Ville", codePostal: "Code postal",
+  capacite: "Capacité", section: "Section", groupeSanguin: "Groupe sanguin", allergies: "Allergies",
+  antecedents: "Antécédents", pai: "PAI", actif: "Actif", lu: "Lu", priorite: "Priorité", categorie: "Catégorie",
+  action: "Action", adresse_ip: "Adresse IP", device: "Appareil", url: "Document", lien: "Document", fichier: "Fichier",
+  symptomes: "Symptômes", resultat: "Résultat", confiance: "Confiance", source: "Origine", isActive: "Compte actif",
+};
+
+const ETATS: Record<string, string> = {
+  en_attente: "En attente", valide: "Validé", rejete: "Rejeté", manquant: "Manquant", expire: "Expiré",
+  expiration_proche: "Expire bientôt", traite: "Traité", archive: "Archivé", nouveau: "Nouveau",
+  hors_plage: "Hors plage horaire", hors_zone: "Hors zone", actif: "Actif", inactif: "Inactif",
+};
+
+function labelOf(key: string) {
+  return DETAIL_LABELS[key] ?? key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+const isLink = (value: string) => /^(https?:\/\/|\/|data:|blob:)/i.test(value);
+const isDateKey = (key: string) => /date|createdat|updatedat|naissance/i.test(key);
+
+function dateText(value: string) {
+  const d = new Date(value);
+  if (isNaN(+d)) return value;
+  const jour = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  return /T\d{2}:\d{2}/.test(value) ? `${jour} à ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : jour;
+}
+
+function DocLink({ url }: { url: string }) {
+  if (!isLink(url)) return <>{url}</>;
+  return <a href={url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Ouvrir</a>;
+}
+
+function DetailValue({ field, value }: { field: string; value: any }) {
+  if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
+  if (typeof value === "boolean") return <>{value ? "Oui" : "Non"}</>;
+  if (typeof value === "number") return <>{value}</>;
+  if (Array.isArray(value)) {
+    if (!value.length) return <span className="text-muted-foreground">—</span>;
+    return <>{value.map((item, i) => (
+      <span key={i}>
+        {typeof item === "object" && item !== null
+          ? (item.prenom || item.nom ? fullName(item) : String(item.nom ?? item.name ?? ""))
+          : String(ETATS[String(item)] ?? item)}
+        {i < value.length - 1 ? ", " : ""}
+      </span>
+    ))}</>;
+  }
+  if (typeof value === "object") {
+    const url = value.url ?? value.lien;
+    if (typeof url === "string" && url) return <DocLink url={url} />;
+    return <>{fullName(value)}</>;
+  }
+  const text = String(value);
+  if (isLink(text)) return <DocLink url={text} />;
+  if (isDateKey(field) || /^\d{4}-\d{2}-\d{2}/.test(text)) return <>{dateText(text)}</>;
+  return <>{ETATS[text] ?? text}</>;
+}
+
 export function ViewDialog({ row, onOpenChange, title }: { row: any; onOpenChange: (o: boolean) => void; title: string }) {
+  const entries = row
+    ? Object.entries(row).filter(([k, v]) => !HIDDEN_DETAIL_KEYS.has(k) && v !== undefined && v !== null && v !== "")
+    : [];
+  const documentUrl = typeof row?.url === "string" && row.url ? row.url : typeof row?.lien === "string" && row.lien ? row.lien : "";
+  const enfantId = enfantIdOf(row?.enfant);
   return (
     <Dialog open={!!row} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <dl className="divide-y text-sm">
-          {row && Object.entries(row).filter(([k]) => !["__v", "password"].includes(k)).map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-4 py-2">
-              <dt className="text-muted-foreground">{k}</dt>
-              <dd className="max-w-[60%] break-words text-right font-medium">{typeof v === "object" && v !== null ? (Array.isArray(v) ? v.map((x) => (typeof x === "object" ? fullName(x) : String(x))).join(", ") : fullName(v)) : String(v)}</dd>
-            </div>
-          ))}
-        </dl>
+        {entries.length === 0
+          ? <p className="py-4 text-center text-sm text-muted-foreground">Aucune information à afficher.</p>
+          : <dl className="divide-y text-sm">
+            {entries.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 py-2">
+                <dt className="text-muted-foreground">{labelOf(k)}</dt>
+                <dd className="max-w-[60%] break-words text-right font-medium"><DetailValue field={k} value={v} /></dd>
+              </div>
+            ))}
+          </dl>}
+        {(documentUrl || enfantId) && (
+          <DialogFooter className="flex-wrap gap-2">
+            {documentUrl && <Button variant="outline" asChild><a href={documentUrl} target="_blank" rel="noopener noreferrer">Ouvrir le document</a></Button>}
+            {enfantId && <Button asChild><Link to="/enfants/$enfantId" params={{ enfantId }}>Ouvrir le dossier</Link></Button>}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

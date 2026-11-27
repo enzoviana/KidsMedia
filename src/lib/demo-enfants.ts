@@ -10,7 +10,8 @@ const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").t
 /** Identifiant d'enfant à partir d'un objet/ID ; en démo, déduit du prénom. */
 export function enfantIdOf(e: any): string | null {
   if (!e) return null;
-  if (typeof e === "string") return /^[a-f0-9]{24}$|^demo-/.test(e) ? e : null;
+  // Identifiants acceptés : ObjectId Mongo, UUID Prisma ou enfant de démonstration.
+  if (typeof e === "string") return /^[a-f0-9]{24}$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^demo-/i.test(e) ? e : null;
   const id = e._id ?? e.id;
   if (id) return String(id);
   if (e.prenom) return `demo-${norm(String(e.prenom))}`;

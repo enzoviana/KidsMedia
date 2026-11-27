@@ -15,6 +15,7 @@ import { toList } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
 import { send, fillPath } from "@/lib/mutate";
 import { enfantIdOf } from "@/lib/demo-enfants";
+import { childIdOfRow, childNameOf, documentUrlOf } from "@/lib/row-target";
 
 export interface Col { label: string; render: (row: any) => ReactNode; className?: string }
 
@@ -101,20 +102,62 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
     } catch (e) { toast.error((e as Error).message); }
   }
 
+  /**
+   * Ouvre la cible utile d'une ligne : dossier enfant, fiche établissement,
+   * document joint ou, en dernier recours, une fiche de détail lisible.
+   * Sans cela, le bouton « Voir » affichait toujours un dump technique.
+   */
+  const activate = (row: any) => {
+    if (onOpenRow) { onOpenRow(row); return; }
+    if (renderView) { setViewing(row); return; }
+    if (!crud) return;
+    if (crud.view === "document") {
+      const url = documentUrlOf(row);
+      if (url) { window.open(url, "_blank", "noopener,noreferrer"); return; }
+    }
+    if (crud.view === "enfant") {
+      const enfantId = enfantIdOf(row);
+      if (enfantId) { navigate({ to: "/enfants/$enfantId", params: { enfantId } }); return; }
+    }
+    if (crud.view === "etablissement") {
+      const etablissementId = rid(row);
+      if (etablissementId) { navigate({ to: "/etablissements/$etablissementId", params: { etablissementId } }); return; }
+    }
+    const enfantId = childIdOfRow(row);
+    if (enfantId) { navigate({ to: "/enfants/$enfantId", params: { enfantId } }); return; }
+    setViewing(row);
+  };
+
+  const viewButton = (row: any) => {
+    const child = childIdOfRow(row);
+    if (onOpenRow) {
+      return <Button size="icon" variant="ghost" title="Voir" aria-label="Voir le détail" onClick={() => onOpenRow(row)}><Eye className="h-4 w-4" /></Button>;
+    }
+    if (renderView) {
+      return <Button size="icon" variant="ghost" title="Voir" aria-label="Voir le détail" onClick={() => setViewing(row)}><Eye className="h-4 w-4" /></Button>;
+    }
+    if (crud?.view === "enfant") {
+      const enfantId = enfantIdOf(row);
+      if (enfantId) return <Button size="icon" variant="ghost" title="Voir le dossier" aria-label={`Voir le dossier de ${[row.prenom, row.nom].filter(Boolean).join(" ")}`} asChild><Link to="/enfants/$enfantId" params={{ enfantId }}><Eye className="h-4 w-4" /></Link></Button>;
+    }
+    if (crud?.view === "etablissement") {
+      const etablissementId = rid(row);
+      if (etablissementId) return <Button size="icon" variant="ghost" title="Voir la crèche" aria-label="Voir la crèche" asChild><Link to="/etablissements/$etablissementId" params={{ etablissementId }}><Eye className="h-4 w-4" /></Link></Button>;
+    }
+    if (crud?.view === "document") {
+      const url = documentUrlOf(row);
+      if (url) return <Button size="icon" variant="ghost" title="Ouvrir le document" aria-label={`Ouvrir ${row.nom ?? row.type ?? "le document"}`} asChild><a href={url} target="_blank" rel="noopener noreferrer"><Eye className="h-4 w-4" /></a></Button>;
+    }
+    if (child) {
+      return <Button size="icon" variant="ghost" title="Voir le dossier" aria-label={`Voir le dossier de ${childNameOf(row)}`} asChild><Link to="/enfants/$enfantId" params={{ enfantId: child }}><Eye className="h-4 w-4" /></Link></Button>;
+    }
+    return <Button size="icon" variant="ghost" title="Voir" aria-label="Voir le détail" onClick={() => setViewing(row)}><Eye className="h-4 w-4" /></Button>;
+  };
+
   const allCols: Col[] = crud ? [...cols, {
     label: "Actions", className: "px-3 py-2 text-right whitespace-nowrap", render: (row) => (
       <div className="flex justify-end gap-1">
-        {crud.view === "enfant" && enfantIdOf(row) ? (
-          <Button size="icon" variant="ghost" title="Voir le dossier" aria-label={`Voir le dossier de ${[row.prenom, row.nom].filter(Boolean).join(" ")}`} asChild><Link to="/enfants/$enfantId" params={{ enfantId: enfantIdOf(row) ?? "" }}><Eye className="h-4 w-4" /></Link></Button>
-        ) : crud.view === "etablissement" && rid(row) ? (
-          <Button size="icon" variant="ghost" title="Voir" asChild><Link to="/etablissements/$etablissementId" params={{ etablissementId: rid(row) }}><Eye className="h-4 w-4" /></Link></Button>
-        ) : crud.view === "document" && (row.url || row.lien) ? (
-          <Button size="icon" variant="ghost" title="Ouvrir le document" aria-label={`Ouvrir ${row.nom ?? row.type ?? "le document"}`} asChild>
-            <a href={row.url ?? row.lien} target="_blank" rel="noopener noreferrer"><Eye className="h-4 w-4" /></a>
-          </Button>
-        ) : (
-          <Button size="icon" variant="ghost" title="Voir" onClick={() => setViewing(row)}><Eye className="h-4 w-4" /></Button>
-        )}
+        {viewButton(row)}
         {!crud.noEdit && <Button size="icon" variant="ghost" title="Modifier" onClick={() => setEditing(row)}><Pencil className="h-4 w-4" /></Button>}
         {!crud.noDelete && <Button size="icon" variant="ghost" title="Supprimer" className="text-destructive hover:text-destructive" onClick={() => setDeleting(row)}><Trash2 className="h-4 w-4" /></Button>}
       </div>
@@ -131,10 +174,7 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrer…" className="pl-8" />
           </div>
         }>
-        <DataTable rows={rows} cols={allCols} onOpenRow={onOpenRow ?? (renderView ? (row) => setViewing(row) : crud?.view === "enfant" ? (row) => {
-          const enfantId = enfantIdOf(row);
-          if (enfantId) navigate({ to: "/enfants/$enfantId", params: { enfantId } });
-        } : undefined)} />
+        <DataTable rows={rows} cols={allCols} onOpenRow={crud || onOpenRow || renderView ? activate : undefined} />
       </Panel>
       {crud && (
         <>

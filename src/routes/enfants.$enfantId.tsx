@@ -108,7 +108,10 @@ function EnfantPage() {
             {(d) => toList(d).length ? toList(d).map((m, i) => <Row key={i} k={m.nom} v={m.posologie ?? "—"} />) : <Empty />}
           </DataPanel>
           <DataPanel title="Ordonnances" icon={ScrollText} spec={specs.enfantOrdo} demoData={demoOrdo} vars={v}>
-            {(d) => [...store.documents.filter((x) => x.enfant?._id === enfantId && x.type === "Ordonnance"), ...toList(d)].map((o, i) => <Row key={i} k={o.nom ?? (o.medicaments ?? []).map((m: any) => m.nom ?? m).join(", ")} v={`→ ${fmtDate(o.dateFin ?? o.dateValidite)}`} />)}
+            {(d) => [...store.documents.filter((x) => x.enfant?._id === enfantId && x.type === "Ordonnance"), ...toList(d)].map((o, i) => {
+              const url = o.url ?? o.lien ?? "";
+              return <Row key={i} k={o.nom ?? (o.medicaments ?? []).map((m: any) => m.nom ?? m).join(", ")} v={<span className="inline-flex items-center gap-2">→ {fmtDate(o.dateFin ?? o.dateValidite)}{url && <a href={url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Ouvrir</a>}</span>} />;
+            })}
           </DataPanel>
           <DataPanel title="Diagnostics IA" icon={BrainCircuit} spec={specs.enfantDiag} demoData={demoDiag} vars={v}>
             {(d) => toList(d).length ? toList(d).map((x, i) => <Row key={i} k={`${fmtDate(x.createdAt)} · ${(x.symptomes ?? []).join(", ")}`} v={x.resultat} />) : <Empty />}
@@ -117,7 +120,10 @@ function EnfantPage() {
             {(d) => toList(d).length ? toList(d).map((t, i) => <Row key={i} k={t.type} v={t.contenu ?? t.message} />) : <Empty />}
           </DataPanel>
           <Panel title="Documents" icon={FileText} spec={specs.enfantDocs} demo={docsR.demo} reason={docsR.reason}>
-            {otherDocs.length ? otherDocs.map((x, i) => <Row key={i} k={x.type ?? x.nom} v={<Pill tone={x.statut === "valide" ? "success" : x.statut === "rejete" ? "danger" : "warning"}>{String(x.statut ?? "en_attente").replace("_", " ")}</Pill>} />) : <Empty text="Aucun document libre. Utilisez « Ajouter un document » pour un PAI, une autorisation de sortie, une ordonnance…" />}
+            {otherDocs.length ? otherDocs.map((x, i) => {
+              const url = x.url ?? x.lien ?? "";
+              return <Row key={i} k={x.type ?? x.nom} v={<span className="inline-flex items-center gap-2"><Pill tone={x.statut === "valide" ? "success" : x.statut === "rejete" ? "danger" : "warning"}>{String(x.statut ?? "en_attente").replace("_", " ")}</Pill>{url && <a href={url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Ouvrir</a>}</span>} />;
+            }) : <Empty text="Aucun document libre. Utilisez « Ajouter un document » pour un PAI, une autorisation de sortie, une ordonnance…" />}
           </Panel>
           <Panel title="Dossier d'inscription" icon={QrCode} spec={specs.docsOblig} demo={dossierR.demo} reason={dossierR.reason}>
             {requiredTypes.length ? (
