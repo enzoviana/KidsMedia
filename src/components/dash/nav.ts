@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { LinkProps } from "@tanstack/react-router";
 import {
   LayoutDashboard, Baby, LayoutGrid, Users, NotebookPen, Pill, FileText, ClipboardCheck, MessageSquare, Bell, Star,
-  Stethoscope, HeartPulse, Building2, BrainCircuit, ScrollText, UserCog, CreditCard, Tag, ShieldAlert, Bug, LifeBuoy, Database, Network, Link2, Wallet, Sparkles, Lock, Heart, MapPinned, Gauge, FileLock2, DatabaseZap, MailOpen, Mail,
+  Stethoscope, HeartPulse, Building2, BrainCircuit, ScrollText, UserCog, CreditCard, Tag, ShieldAlert, Bug, LifeBuoy, Database, Network, Link2, Wallet, Sparkles, Lock, Heart, MapPinned, Gauge, FileLock2, DatabaseZap, MailOpen, Mail, Syringe,
 } from "lucide-react";
 import type { RoleKey } from "@/lib/api";
 
@@ -32,6 +32,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
       { label: "Signaler un symptôme (IA)", icon: Sparkles, to: "/analyse-ia" },
       { label: "Documents", icon: FileText, to: "/documents" },
       { label: "Documents obligatoires", icon: ClipboardCheck, to: "/documents-obligatoires" },
+      { label: "Vaccins obligatoires", icon: Syringe, to: "/vaccins-obligatoires" },
     ]},
     { label: "Annuaires", items: [
       { label: "Médecins", icon: Stethoscope, to: "/medecins" },
@@ -89,6 +90,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
       { label: "Crèches", icon: Building2, to: "/etablissements" },
       { label: "Groupes territoriaux", icon: Network, to: "/admin/groupes" },
       { label: "Enfants", icon: Baby, to: "/enfants" },
+      { label: "Vaccins obligatoires", icon: Syringe, to: "/admin/vaccins" },
       { label: "Liaisons", icon: Link2, to: "/admin/liaisons" },
       { label: "Supervision & RSAI", icon: MapPinned, to: "/coordination" },
       { label: "Médecins", icon: Stethoscope, to: "/medecins" },
@@ -116,6 +118,7 @@ export const roleNav: Record<RoleKey, NavLinkGroup[]> = {
     { label: "Console", items: [
       { label: "Tableau de bord", icon: LayoutDashboard, to: "/dev" },
       { label: "Utilisateurs", icon: UserCog, to: "/admin/utilisateurs" },
+      { label: "Vaccins obligatoires", icon: Syringe, to: "/admin/vaccins" },
       { label: "Groupes territoriaux", icon: Network, to: "/admin/groupes" },
       { label: "Messages du site", icon: Mail, to: "/admin/contacts" },
       { label: "Clés API & messages", icon: Lock, to: "/dev/configuration" },

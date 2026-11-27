@@ -110,6 +110,7 @@ const crud: Crud = {
 function Page() {
   return (
     <ListPage
+      role="admin"
       crud={crud}
       title="Messages du site"
       spec={specs.contactMessages}

@@ -83,6 +83,10 @@ function Page() {
             intérêt vital lorsque la loi le permet.
           </li>
           <li>
+            <strong>Partager la fiche d'urgence pendant un SOS :</strong> consentement explicite du
+            parent. Le QR est limité à 5 scans sur 5 heures et chaque accès est tracé.
+          </li>
+          <li>
             <strong>Sécurité, audit et prévention des accès non autorisés :</strong> intérêt
             légitime et obligations légales.
           </li>

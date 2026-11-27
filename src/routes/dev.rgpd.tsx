@@ -32,6 +32,7 @@ const demo = {
     { nom: "Comptes utilisateurs", finalite: "Authentification et MFA", baseLegale: "Exécution du contrat", duree: "Durée du compte + 1 an" },
     { nom: "Journaux de sécurité", finalite: "Traçabilité des accès", baseLegale: "Obligation légale / intérêt légitime", duree: "1 an" },
     { nom: "Analyses IA des symptômes", finalite: "Aide au diagnostic", baseLegale: "Consentement explicite", duree: "Durée d'accueil + 3 ans" },
+    { nom: "Partage d'urgence par QR pendant un SOS", finalite: "Accès des secours aux données vitales, limité à 5 scans sur 5 h", baseLegale: "Consentement explicite des parents (art. 9.2.a)", duree: "Fenêtre active 5 h, traces conservées 1 an" },
     { nom: "Facturation", finalite: "Abonnements (Stripe)", baseLegale: "Obligation légale comptable", duree: "10 ans" },
   ],
   consentements: 184, demandes: 7, accesDossiers: 12480,

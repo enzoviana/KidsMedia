@@ -26,6 +26,7 @@ const cols: Col[] = [{label:"Crèche",render:(r)=><Link to="/etablissements/$eta
 const crud: Crud = { entity: "une crèche", base: "/etablissements", view: "etablissement", fields: [
   { name: "nom", label: "Nom", type: "text", required: true },
   { name: "adresse", label: "Adresse", type: "address", required: true },
+  { name: "region", label: "Région (déduite du code postal si vide)", type: "text" },
   { name: "capacite", label: "Capacité", type: "number" },
   { name: "telephone", label: "Téléphone", type: "tel" },
   { name: "email", label: "E-mail", type: "email" },

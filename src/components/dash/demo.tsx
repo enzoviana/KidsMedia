@@ -6,6 +6,7 @@ import { FlaskConical, Copy } from "lucide-react";
 import type { RouteSpec } from "@/lib/specs";
 import { toast } from "sonner";
 import { getDiag, explain, curlOf } from "@/lib/diagnostic";
+import { getSession, roleToKey } from "@/lib/api";
 
 function DiagBox({ id }: { id: string }) {
   const d = getDiag(id);
@@ -86,7 +87,7 @@ export function DemoBadge({ spec, reason }: { spec: RouteSpec; reason?: string |
               <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(specToText(spec)); toast.success("Copié"); }}>
                 <Copy className="h-4 w-4" /> Copier
               </Button>
-              <Button size="sm" asChild><Link to="/routes-manquantes">Toutes les routes manquantes</Link></Button>
+              {roleToKey(getSession()?.user.role) === "dev" && <Button size="sm" asChild><Link to="/routes-manquantes">Toutes les routes manquantes</Link></Button>}
             </div>
           </div>
         </SheetContent>

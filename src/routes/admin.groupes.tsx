@@ -42,5 +42,5 @@ const crud: Crud = {
 };
 
 function Page() {
-  return <ListPage crud={crud} title="Groupes territoriaux" spec={specs.groupes} demo={demo} cols={cols} icon={Network} />;
+  return <ListPage role="admin" crud={crud} title="Groupes territoriaux" spec={specs.groupes} demo={demo} cols={cols} icon={Network} />;
 }

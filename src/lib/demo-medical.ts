@@ -22,6 +22,7 @@ export const demoVaccins = [
 
 export const consentTypes = [
   { type: "soins_urgence", label: "Soins d'urgence et administration de médicaments" },
+  { type: "acces_urgence_qr", label: "Partage d'urgence par QR (secours, 5 scans / 5 h)" },
   { type: "partage_rsai", label: "Partage du dossier avec le RSAI de la crèche" },
   { type: "donnees_sante", label: "Traitement des données de santé (RGPD)" },
   { type: "transport", label: "Transport médicalisé en cas d'urgence" },
@@ -30,6 +31,7 @@ export const consentTypes = [
 
 export const demoConsentements = [
   { type: "soins_urgence", accorde: true, signePar: { prenom: "Claire", nom: "Martin" }, date: "2026-09-01" },
+  { type: "acces_urgence_qr", accorde: true, signePar: { prenom: "Claire", nom: "Martin" }, date: "2026-09-01" },
   { type: "partage_rsai", accorde: true, signePar: { prenom: "Claire", nom: "Martin" }, date: "2026-09-01" },
   { type: "donnees_sante", accorde: true, signePar: { prenom: "Claire", nom: "Martin" }, date: "2026-09-01" },
   { type: "droit_image", accorde: false, signePar: { prenom: "Claire", nom: "Martin" }, date: "2026-09-01" },

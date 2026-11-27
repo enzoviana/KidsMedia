@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormDialog, ConfirmDialog } from "./crud";
 import { Pill, fullName } from "./widgets";
 import { send } from "@/lib/mutate";
+import { getSession, roleToKey } from "@/lib/api";
 import { useNavigate } from "@tanstack/react-router";
 
 /** Bouton « Scanner un QR code » par caméra (crèche, médecin, RSAI). */
@@ -83,6 +84,10 @@ export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initi
   const [liens, setLiens] = useState<Lien[]>(initialLiens);
   const [adding, setAdding] = useState(false);
   const [revoke, setRevoke] = useState<Lien | null>(null);
+  const role = roleToKey(getSession()?.user.role);
+  // Seule la crèche (ou l'administration) partage un dossier : un parent ne
+  // peut pas inviter une autre personne sur le dossier de son enfant.
+  const canManage = role === "creche" || role === "admin" || role === "dev";
   useEffect(() => { setCode(initialCode ?? ""); }, [initialCode, prenom]);
   useEffect(() => { setLiens(initialLiens); }, [initialLiens.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -104,13 +109,13 @@ export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initi
         <p className="font-mono text-xl font-bold tracking-wider">{code}</p>
         <div className="flex gap-1">
           <Button size="sm" variant="outline" onClick={() => { navigator.clipboard?.writeText(code); toast.success("Code copié"); }}><Copy className="mr-1 h-3.5 w-3.5" />Copier</Button>
-          <Button size="sm" variant="outline" onClick={regen}><RefreshCw className="mr-1 h-3.5 w-3.5" />Régénérer</Button>
+          {canManage && <Button size="sm" variant="outline" onClick={regen}><RefreshCw className="mr-1 h-3.5 w-3.5" />Régénérer</Button>}
         </div>
       </div>
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="flex items-center gap-1.5 text-sm font-medium"><Users className="h-4 w-4" />Personnes liées ({liens.length})</p>
-          <Button size="sm" onClick={() => setAdding(true)}><UserPlus className="mr-1 h-3.5 w-3.5" />Lier quelqu'un</Button>
+          {canManage && <Button size="sm" onClick={() => setAdding(true)}><UserPlus className="mr-1 h-3.5 w-3.5" />Lier quelqu'un</Button>}
         </div>
         <ul className="divide-y text-sm">
           {liens.map((l, i) => (
@@ -122,7 +127,7 @@ export function LiaisonPanel({ enfantId, code: initialCode, prenom, liens: initi
               </div>
               <div className="flex items-center gap-2">
                 <Pill tone={l.invitation ? "warning" : l.role === "parent" ? "success" : "default"}>{l.invitation ? "invitation" : l.role}</Pill>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Révoquer" onClick={() => setRevoke(l)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                {canManage && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Révoquer" onClick={() => setRevoke(l)}><Trash2 className="h-3.5 w-3.5" /></Button>}
               </div>
             </li>
           ))}

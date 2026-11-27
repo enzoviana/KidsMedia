@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Sparkles, Syringe } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dash/shell";
-import { Panel } from "@/components/dash/widgets";
+import { Panel, Pill } from "@/components/dash/widgets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,8 +31,16 @@ function NouvelEnfant() {
   // Seuls les profils globaux (admin / dev) doivent choisir la crèche : une crèche
   // est automatiquement rattachée à son établissement et un parent n'en a pas.
   const choisirEtablissement = role === "admin" || role === "dev";
+  const [etabChoisi, setEtabChoisi] = useState("");
   const etabsR = useApiOrDemo<unknown>(specs.etabs, [], undefined, { fallbackToDemo: false });
   const etablissements = toList(etabsR.data);
+  const sessionEtab = String(userParams(getSession()?.user ?? {})["etablissementId"] ?? "");
+  const etabId = choisirEtablissement ? etabChoisi : sessionEtab;
+  // Vaccins demandés par la crèche pour l'inscription : socle national + ajouts locaux.
+  const vaccinsR = useApiOrDemo<unknown>(specs.vaccinsReferenceEtab, [], etabId ? { etablissementId: etabId } : undefined, { fallbackToDemo: false });
+  const vaccins = toList(vaccinsR.data);
+  const obligatoires = vaccins.filter((v: any) => v.niveau === "obligatoire");
+  const recommandes = vaccins.filter((v: any) => v.niveau === "recommande");
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,7 +68,7 @@ function NouvelEnfant() {
           {choisirEtablissement && (
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="etablissementId">Crèche / établissement</Label>
-              <select id="etablissementId" name="etablissementId" required className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
+              <select id="etablissementId" name="etablissementId" required value={etabChoisi} onChange={(e) => setEtabChoisi(e.target.value)} className="flex h-9 w-full rounded-md border bg-background px-3 text-sm">
                 <option value="">— Sélectionner —</option>
                 {etablissements.map((e: any) => <option key={e._id ?? e.id} value={e._id ?? e.id}>{e.nom}</option>)}
               </select>
@@ -78,6 +86,42 @@ function NouvelEnfant() {
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="allergies">Allergies (séparées par des virgules)</Label><Input id="allergies" name="allergies" maxLength={300} /></div>
           <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer"}</Button></div>
         </form>
+      </Panel>
+
+      <Panel
+        title="Vaccins demandés à l'inscription"
+        icon={Syringe}
+        className="mt-4 max-w-2xl"
+        spec={specs.vaccinsReferenceEtab}
+        demo={vaccinsR.demo}
+        reason={vaccinsR.reason}
+      >
+        {!etabId ? (
+          <p className="text-sm text-muted-foreground">Sélectionnez une crèche pour afficher les vaccins exigés.</p>
+        ) : !vaccins.length ? (
+          <p className="text-sm text-muted-foreground">Aucun vaccin de référence n'est encore configuré pour cette crèche.</p>
+        ) : (
+          <div className="space-y-4 text-sm">
+            <p className="text-muted-foreground">
+              Le carnet de vaccination sera vérifié à l'inscription. Les éléments marqués « obligatoire » sont exigés ;
+              les « recommandés » sont demandés sans bloquer l'inscription.
+            </p>
+            <div>
+              <p className="mb-2 flex items-center gap-2 font-medium"><ShieldCheck className="h-4 w-4 text-success" />Obligatoires ({obligatoires.length})</p>
+              <ul className="flex flex-wrap gap-2">
+                {obligatoires.map((v: any) => <li key={v._id ?? v.nom}><Pill tone="danger">{v.nom}</Pill></li>)}
+                {!obligatoires.length && <li className="text-muted-foreground">Aucun</li>}
+              </ul>
+            </div>
+            <div>
+              <p className="mb-2 flex items-center gap-2 font-medium"><Sparkles className="h-4 w-4 text-warning" />Recommandés ({recommandes.length})</p>
+              <ul className="flex flex-wrap gap-2">
+                {recommandes.map((v: any) => <li key={v._id ?? v.nom}><Pill tone="warning">{v.nom}</Pill></li>)}
+                {!recommandes.length && <li className="text-muted-foreground">Aucun</li>}
+              </ul>
+            </div>
+          </div>
+        )}
       </Panel>
     </DashboardShell>
   );

@@ -76,13 +76,16 @@ export function TemperatureButton({ enfantId, onAdded }: { enfantId: string; onA
   );
 }
 
-export function AvisRsaiButton({ rsaiId }: { rsaiId: string }) {
+export function AvisRsaiButton({ rsaiId, canRate = true, raison }: { rsaiId: string; canRate?: boolean; raison?: string }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState(5);
   const [txt, setTxt] = useState("");
   async function submit() {
     const r = await send("POST", `/rsai/${rsaiId}/avis`, { note, commentaire: txt }).catch(err);
     if (r) { ok(r, "Avis enregistré"); setOpen(false); }
+  }
+  if (!canRate) {
+    return <Button size="sm" variant="outline" disabled title={raison ?? "Une mission effectuée et terminée est requise avant de noter."}><Star className="mr-1 h-4 w-4" />Avis après mission terminée</Button>;
   }
   return (
     <>

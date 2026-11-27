@@ -111,6 +111,13 @@ function Page() {
     { name: "telephone", label: "Téléphone (SMS)", type: "tel" },
     { name: "etablissementId", label: "Crèche / établissement (requis pour un compte crèche)", lookup: "etablissement", quickCreate: true },
     { name: "groupeId", label: "Groupe territorial (requis pour un directeur)", lookup: "groupe" },
+    { name: "qualification", label: "Qualification (RSAI / médecin)", type: "text" },
+    { name: "adresse", label: "Adresse professionnelle (RSAI)", type: "address" },
+    { name: "secteur", label: "Secteur d'intervention (RSAI)", type: "text" },
+    { name: "region", label: "Région (RSAI)", type: "text" },
+    { name: "presentation", label: "Présentation (RSAI)", type: "textarea" },
+    { name: "experienceAnnees", label: "Années d'expérience (RSAI)", type: "number" },
+    { name: "disponibilites", label: "Disponibilités (RSAI)", type: "text" },
   ] } as Crud;
-  return <ListPage crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog} />;
+  return <ListPage role="admin" crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog} />;
 }

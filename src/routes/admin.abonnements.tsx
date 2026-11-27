@@ -38,5 +38,5 @@ const crud: Crud = { entity: "un abonnement", base: "/abonnements", fields: [
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Abonnements" spec={specs.abos} demo={demo} cols={cols} icon={CreditCard} />;
+  return <ListPage role="admin" crud={crud} title="Abonnements" spec={specs.abos} demo={demo} cols={cols} icon={CreditCard} />;
 }

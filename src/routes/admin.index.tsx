@@ -10,7 +10,6 @@ import { DashboardShell, type NavGroup } from "@/components/dash/shell";
 import { DataPanel, StatCard, Pill, Empty, fullName, fmtDate, tip } from "@/components/dash/widgets";
 import { specs } from "@/lib/specs";
 import { apiFetch, getSession, toList } from "@/lib/api";
-import { MigrationPanel } from "@/components/dash/migrations";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -143,7 +142,6 @@ function Admin() {
         </DataPanel>
       </div>
 
-      <MigrationPanel />
     </DashboardShell>
   );
 }

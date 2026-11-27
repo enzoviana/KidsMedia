@@ -11,8 +11,10 @@ export const Route = createFileRoute("/migrations")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ]}),
+  // Outil strictement réservé au rôle Développeur : aucun autre rôle ne doit
+  // voir ni lancer la procédure Render / migrations.
   component: () => (
-    <DashboardShell title="Migrations base de données">
+    <DashboardShell role="dev" title="Migrations base de données">
       <MigrationPanel />
     </DashboardShell>
   ),

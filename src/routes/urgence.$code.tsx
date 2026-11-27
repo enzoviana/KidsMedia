@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Droplets, HeartPulse, Phone, Pill, Printer, ShieldAlert, UserRound } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { SOS_MAX_SCANS, sosExpiresLabel } from "@/lib/sos";
 
 export const Route = createFileRoute("/urgence/$code")({
   head: () => ({
@@ -33,6 +34,7 @@ interface UrgenceData {
   proches?: { prenom?: string; nom?: string; role?: string; telephone?: string | null }[];
   traitements?: { nom: string; posologie?: string | null; horaires?: string[]; dateFin?: string | null }[];
   misAJour?: string;
+  sos?: { id?: string; motif?: string | null; maxScans?: number; dureeHeures?: number; scansUtilises?: number; scansRestants?: number; expiresAt?: string | null } | null;
 }
 
 const fmtDate = (v?: string | null) => {
@@ -116,6 +118,13 @@ function Page() {
 
         {!loading && data && e && (
           <>
+            {data.sos && (
+              <section className="rounded-2xl border-2 border-warning bg-warning/10 p-3 text-sm">
+                <p className="font-semibold">Fenêtre SOS active{data.sos.motif ? ` · ${data.sos.motif}` : ""}</p>
+                <p className="mt-1">{data.sos.scansUtilises ?? 0}/{data.sos.maxScans ?? SOS_MAX_SCANS} scans utilisés · expire le {sosExpiresLabel(data.sos.expiresAt)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Partage limité à {data.sos.maxScans ?? SOS_MAX_SCANS} scans pendant {data.sos.dureeHeures ?? 5} h. Chaque accès est tracé.</p>
+              </section>
+            )}
             <div className="grid grid-cols-2 gap-2 print:hidden">
               <a href="tel:15" className="flex items-center justify-center gap-2 rounded-xl bg-destructive px-3 py-3 text-sm font-bold text-destructive-foreground"><Phone className="h-4 w-4" />Appeler le 15</a>
               {parentTel

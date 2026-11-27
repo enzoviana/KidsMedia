@@ -15,7 +15,7 @@ import { Panel, Pill, fullName, fmtDate, Empty } from "./widgets";
 import { EnfantLink, FormDialog } from "./crud";
 import { UploadDocButton } from "./upload";
 
-export function RatingButton({ id, name, target = "rsai", average = 0, count = 0 }: { id: string; name: string; target?: "rsai" | "etablissement"; average?: number; count?: number }) {
+export function RatingButton({ id, name, target = "rsai", average = 0, count = 0, canRate = true, raison }: { id: string; name: string; target?: "rsai" | "etablissement"; average?: number; count?: number; canRate?: boolean; raison?: string }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const store = useCoordination();
@@ -25,7 +25,8 @@ export function RatingButton({ id, name, target = "rsai", average = 0, count = 0
   const spec = target === "rsai" ? specs.rsaiNoter : specs.etablissementAvis;
   return <div className="flex flex-wrap items-center gap-2">
     <span className="flex items-center gap-1 text-sm"><Star className="h-4 w-4 fill-warning text-warning" />{local?.note ?? (average || "—")} <span className="text-muted-foreground">({count + (local ? 1 : 0)})</span></span>
-    {allowed && <Button size="sm" variant="outline" onClick={() => { setRating(local?.note ?? 0); setOpen(true); }}>Noter</Button>}
+    {allowed && canRate && <Button size="sm" variant="outline" onClick={() => { setRating(local?.note ?? 0); setOpen(true); }}>Noter</Button>}
+    {allowed && !canRate && <Button size="sm" variant="ghost" disabled title={raison ?? "Une mission effectuée et terminée est requise avant de noter."}>Noter</Button>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Noter {name}</DialogTitle><DialogDescription>Avis sur votre collaboration.</DialogDescription></DialogHeader>
       <form className="space-y-4" onSubmit={async (e) => {
         e.preventDefault(); if (!validRating(rating)) { toast.error("Choisissez une note de 1 à 5."); return; }

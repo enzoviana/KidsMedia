@@ -1,7 +1,8 @@
 import { SecurityBlockedScreen } from "./security-blocked";
 import { useEffect, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Syringe, ShieldCheck, Plus, Eye, MapPin, Clock, Lock, FileLock2, Sparkles, Loader2 } from "lucide-react";
+import { Syringe, ShieldCheck, Plus, Eye, MapPin, Clock, Lock, FileLock2, Sparkles, Loader2, Siren } from "lucide-react";
 import { toast } from "sonner";
 import { Panel, Pill, Empty, fullName, fmtDate } from "./widgets";
 import { FormDialog } from "./crud";
@@ -12,46 +13,89 @@ import { send } from "@/lib/mutate";
 import { toList, getSession, roleToKey } from "@/lib/api";
 import { useApiOrDemo } from "@/lib/use-api";
 import { vaccinsObligatoires, demoVaccins, consentTypes, demoConsentements, demoPlages, dansPlage, deviceName } from "@/lib/demo-medical";
+import { SOS_MAX_SCANS, sosExpiresLabel, sosStatutLabel } from "@/lib/sos";
 
-/* ---------------- Carnet vaccinal ---------------- */
+/* ---------------- Carnet vaccinal & vaccins exigés ---------------- */
+const demoReferences = vaccinsObligatoires.map((v, i) => {
+  const injections = demoVaccins.filter((x) => x.nom === v.nom);
+  return { _id: `ref-${i}`, nom: v.nom, niveau: "obligatoire", dosesAttendues: v.doses.length, doses: injections.length, aJour: injections.length >= v.doses.length, manquant: injections.length < v.doses.length, portee: "nationale" };
+});
+const demoVaccinData = {
+  references: demoReferences,
+  injections: demoVaccins,
+  bilan: {
+    obligatoiresTotal: demoReferences.length,
+    obligatoiresAJour: demoReferences.filter((r) => r.aJour).length,
+    obligatoiresManquants: demoReferences.filter((r) => !r.aJour).length,
+    recommandesTotal: 0,
+    recommandesFaits: 0,
+    aJour: demoReferences.every((r) => r.aJour),
+  },
+};
+
 export function VaccinPanel({ enfantId }: { enfantId: string }) {
-  const r = useApiOrDemo<unknown>(specs.vaccins, demoVaccins, { enfantId });
-  const [extra, setExtra] = useState<any[]>([]);
+  const qc = useQueryClient();
+  const r = useApiOrDemo<any>(specs.vaccinsReferenceEnfant, demoVaccinData, { enfantId }, { fallbackToDemo: !!getSession()?.demo });
   const [open, setOpen] = useState(false);
-  const all = [...extra, ...toList(r.data)];
+  const data = r.data ?? demoVaccinData;
+  const references = Array.isArray(data.references) ? data.references : [];
+  const injections = Array.isArray(data.injections) ? data.injections : [];
+  const bilan = { ...demoVaccinData.bilan, ...(data.bilan ?? {}) };
+  bilan.obligatoiresTotal = Number(bilan.obligatoiresTotal) || 0;
+  bilan.obligatoiresAJour = Number(bilan.obligatoiresAJour) || 0;
+  bilan.obligatoiresManquants = Number(bilan.obligatoiresManquants) || 0;
+  bilan.recommandesTotal = Number(bilan.recommandesTotal) || 0;
+  bilan.recommandesFaits = Number(bilan.recommandesFaits) || 0;
+  const manquants = references.filter((v: any) => v.niveau === "obligatoire" && !v.aJour);
   const now = Date.now();
+  const options = references.length ? references.map((v: any) => v.nom) : vaccinsObligatoires.map((v) => v.nom);
   return (
-    <Panel title="Carnet vaccinal (11 vaccins obligatoires)" icon={Syringe} spec={specs.vaccins} demo={r.demo} reason={r.reason}
-      actions={<Button size="sm" variant="outline" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Injection</Button>}>
+    <Panel
+      title={`Carnet vaccinal & vaccins exigés${bilan.obligatoiresTotal ? ` (${bilan.obligatoiresAJour}/${bilan.obligatoiresTotal} obligatoires à jour)` : ""}`}
+      icon={Syringe}
+      spec={specs.vaccinsReferenceEnfant}
+      demo={r.demo}
+      reason={r.reason}
+      actions={<Button size="sm" variant="outline" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Injection</Button>}
+    >
+      {bilan.obligatoiresTotal > 0 && (
+        <div className={`mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm ${bilan.aJour ? "border-success/40 bg-success/10" : "border-destructive/40 bg-destructive/5"}`}>
+          <Pill tone={bilan.aJour ? "success" : "danger"}>{bilan.aJour ? "Dossier vaccinal à jour" : `${bilan.obligatoiresManquants} vaccin(s) obligatoire(s) manquant(s)`}</Pill>
+          <span className="text-muted-foreground">{bilan.obligatoiresAJour}/{bilan.obligatoiresTotal} obligatoires · {bilan.recommandesFaits}/{bilan.recommandesTotal} recommandés</span>
+          {manquants.length > 0 && <span className="text-xs text-destructive">{manquants.slice(0, 3).map((v: any) => v.nom).join(", ")}{manquants.length > 3 ? "…" : ""}</span>}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="py-2">Vaccin</th><th>Doses</th><th>Dernière injection</th><th>Prescripteur</th><th>Statut</th></tr>
+            <tr><th className="py-2">Vaccin</th><th>Niveau</th><th>Doses</th><th>Dernière injection</th><th>Prescripteur</th><th>Statut</th></tr>
           </thead>
           <tbody>
-            {vaccinsObligatoires.map((v) => {
-              const inj = all.filter((x) => x.nom === v.nom).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+            {references.map((v: any) => {
+              const inj = injections.filter((x: any) => String(x.nom).toLowerCase() === String(v.nom).toLowerCase()).sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)));
               const last = inj[0];
-              const rappel = inj.find((x) => x.rappel)?.rappel;
+              const rappel = inj.find((x: any) => x.rappel)?.rappel;
               const soon = rappel && new Date(rappel).getTime() - now < 30 * 864e5;
-              const tone = inj.length >= v.doses.length ? "success" : soon ? "warning" : inj.length ? "default" : "danger";
-              const label = inj.length >= v.doses.length ? "À jour" : soon ? `Rappel ${fmtDate(rappel)}` : inj.length ? "En cours" : "Non fait";
+              const tone = v.aJour ? "success" : v.niveau === "recommande" ? "default" : soon ? "warning" : inj.length ? "default" : "danger";
+              const label = v.aJour ? "À jour" : soon ? `Rappel ${fmtDate(rappel)}` : inj.length ? "En cours" : v.niveau === "recommande" ? "Recommandé" : "Non fait";
               return (
-                <tr key={v.nom} className="border-t">
+                <tr key={v._id ?? v.nom} className="border-t">
                   <td className="py-2 font-medium">{v.nom}</td>
-                  <td>{inj.length}/{v.doses.length} <span className="text-xs text-muted-foreground">({v.doses.join(", ")})</span></td>
+                  <td><Pill tone={v.niveau === "obligatoire" ? "danger" : "warning"}>{v.niveau === "obligatoire" ? "Obligatoire" : "Recommandé"}</Pill></td>
+                  <td>{inj.length}/{v.dosesAttendues ?? 1}</td>
                   <td>{last ? fmtDate(last.date) : "—"}</td>
                   <td>{last ? fullName(last.medecin) : "—"}</td>
                   <td><Pill tone={tone}>{label}</Pill></td>
                 </tr>
               );
             })}
+            {!references.length && <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">Aucun vaccin de référence configuré.</td></tr>}
           </tbody>
         </table>
       </div>
       <FormDialog open={open} onOpenChange={setOpen} title="Ajouter une injection"
         fields={[
-          { name: "nom", label: "Vaccin", type: "select", options: vaccinsObligatoires.map((v) => v.nom), required: true },
+          { name: "nom", label: "Vaccin", type: "select", options, required: true },
           { name: "dose", label: "Dose n°", type: "number", required: true },
           { name: "date", label: "Date", type: "date", required: true },
           { name: "medecin", label: "Médecin prescripteur", lookup: "medecin", required: true },
@@ -60,7 +104,8 @@ export function VaccinPanel({ enfantId }: { enfantId: string }) {
         ]}
         onSubmit={async (v) => {
           const res = await send("POST", specs.vaccinAdd.path, v, { enfantId });
-          setExtra((x) => [{ ...v, medecin: { _id: v.medecin } }, ...x]);
+          qc.invalidateQueries({ queryKey: ["api", specs.vaccinsReferenceEnfant.id] });
+          qc.invalidateQueries({ queryKey: ["api", specs.vaccins.id] });
           toast.success(res.demo ? "Injection ajoutée (démo)" : "Injection ajoutée");
         }} />
     </Panel>
@@ -139,6 +184,74 @@ export function AccesHistorique({ enfantId }: { enfantId: string }) {
           ))}
         </ul>
       ) : <Empty />}
+    </Panel>
+  );
+}
+
+/* ---------------- SOS : fenêtres et scans d'urgence ---------------- */
+const demoSosList = [{
+  id: "sos-demo-1", motif: "Réaction allergique", statut: "ouverte", maxScans: SOS_MAX_SCANS, dureeHeures: 5,
+  scansUtilises: 2, scansRestants: 3,
+  createdAt: new Date(Date.now() - 2 * 3600e3).toISOString(),
+  expiresAt: new Date(Date.now() + 3 * 3600e3).toISOString(),
+  declenchePar: { prenom: "Claire", nom: "Martin", role: "parent" },
+  scans: [
+    { id: "scan-1", ip: "82.64.1.10", device: "iPhone — Safari", scannedAt: new Date(Date.now() - 3600e3).toISOString() },
+    { id: "scan-2", ip: "90.12.4.8", device: "Chrome — Android", scannedAt: new Date(Date.now() - 1800e3).toISOString() },
+  ],
+}];
+
+export function SosHistorique({ enfantId }: { enfantId: string }) {
+  const r = useApiOrDemo<unknown>(specs.sosEnfant, demoSosList, { enfantId });
+  const qc = useQueryClient();
+  const role = roleToKey(getSession()?.user?.role);
+  const outilTemps = role === "admin" || role === "dev";
+  const list = toList(r.data);
+  async function simuler(id: string, body: Record<string, unknown>, message: string) {
+    try {
+      const res = await send("POST", specs.sosSimuler.path, body, { sosId: id });
+      qc.invalidateQueries({ queryKey: ["api", specs.sosEnfant.id] });
+      toast.success(`${message}${res.demo ? " (démo)" : ""}`);
+    } catch (e) { toast.error((e as Error).message); }
+  }
+  return (
+    <Panel title="SOS & scans d'urgence" icon={Siren} spec={specs.sosEnfant} demo={r.demo} reason={r.reason}>
+      {list.length ? (
+        <ul className="space-y-4 text-sm">
+          {list.map((s, i) => (
+            <li key={s.id ?? i} className="border-b pb-3 last:border-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-medium">{s.motif ?? "SOS"}</span>
+                <Pill tone={s.statut === "ouverte" ? "warning" : s.statut === "expiree" || s.statut === "cloturee" ? "default" : "danger"}>{sosStatutLabel(s.statut)}</Pill>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Déclenché le {fmtDate(s.createdAt)}
+                {s.declenchePar ? ` par ${fullName(s.declenchePar)}` : ""} · {s.scansUtilises ?? s.scans?.length ?? 0}/{s.maxScans ?? SOS_MAX_SCANS} scans
+                {s.expiresAt ? ` · expire le ${sosExpiresLabel(s.expiresAt)}` : ""}
+              </p>
+              {outilTemps && s.id && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-dashed px-2 py-2 text-xs">
+                  <span className="font-medium">Simulation du temps (admin/dev) :</span>
+                  <Button size="sm" variant="outline" onClick={() => simuler(String(s.id), { heuresRestantes: 5 }, "Fenêtre replacée à 5 h")}>Remettre à 5 h</Button>
+                  <Button size="sm" variant="outline" onClick={() => simuler(String(s.id), { scansUtilises: 5 }, "Quota rempli à 5 scans")}>Remplir 5 scans</Button>
+                  <Button size="sm" variant="destructive" onClick={() => simuler(String(s.id), { expirer: true }, "Fenêtre expirée immédiatement")}>Simuler l'expiration</Button>
+                </div>
+              )}
+              {(s.scans ?? []).length > 0 && (
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {(s.scans ?? []).map((scan: any, j: number) => (
+                    <li key={scan.id ?? j} className="flex flex-wrap gap-x-2">
+                      <span>{sosExpiresLabel(scan.scannedAt)}</span>
+                      <span>{scan.ip ?? "IP inconnue"}</span>
+                      <span>{scan.device ?? "Appareil inconnu"}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : <Empty text="Aucun SOS enregistré" />}
     </Panel>
   );
 }

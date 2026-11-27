@@ -13,7 +13,7 @@ import { LiaisonPanel } from "@/components/dash/liaison";
 import { UploadDocButton } from "@/components/dash/upload";
 import { useApiOrDemo } from "@/lib/use-api";
 import { Panel } from "@/components/dash/widgets";
-import { VaccinPanel, ConsentPanel, AccesHistorique, AccessGuard, SignalerButton } from "@/components/dash/medical";
+import { VaccinPanel, ConsentPanel, AccesHistorique, AccessGuard, SignalerButton, SosHistorique } from "@/components/dash/medical";
 import { DocumentAlerts, MedicalExchanges } from "@/components/dash/coordination";
 import { useCoordination } from "@/lib/coordination";
 
@@ -150,6 +150,7 @@ function EnfantPage() {
         <ConsentPanel enfantId={enfantId} />
         <AccesHistorique enfantId={enfantId} />
       </div>
+      <div className="mt-4"><SosHistorique enfantId={enfantId} /></div>
       </AccessGuard>
     </DashboardShell>
   );

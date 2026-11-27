@@ -18,6 +18,7 @@ import { Avatar, Chip, Empty, Glass, IconTile, inputCls, Pill, PrimaryBtn, Secti
 import { ChildHero, Stat } from "./dossier";
 import { ABSENCE_MOTIFS } from "@/lib/terrain-rules";
 import { QrScanner } from "@/components/dash/qr-scanner";
+import { SOS_DUREE_HEURES, SOS_MAX_SCANS, demoSos, sosExpiresLabel } from "@/lib/sos";
 
 const name = (e: any) => [e?.prenom, e?.nom].filter(Boolean).join(" ") || "—";
 const etabId = () => userParams(getSession()?.user ?? ({} as any))["etablissementId"];
@@ -96,7 +97,15 @@ function AbsenceSheet({ e, onClose }: { e: any; onClose: () => void }) {
 }
 function QrSheet({ e, onClose }: { e: any; onClose: () => void }) {
   const [src, setSrc] = useState("");
-  useEffect(() => { try { setSrc(qrDataUrl(`${window.location.origin}/app?enfant=${idOf(e)}&urgence=${e.codeLiaison ?? ""}`, 420)); } catch { setSrc(""); } }, [e]);
+  useEffect(() => {
+    // Même format que le web et le mobile : la fiche d'urgence publique doit
+    // s'ouvrir sans compte, y compris pour un secouriste.
+    const code = e.urgenceToken ?? e.codeLiaison;
+    const url = code
+      ? `${window.location.origin}/urgence/${encodeURIComponent(String(code))}`
+      : `${window.location.origin}/app?enfant=${encodeURIComponent(idOf(e))}`;
+    try { setSrc(qrDataUrl(url, 420)); } catch { setSrc(""); }
+  }, [e]);
   return <Sheet title="Carte QR médicale" sub={`À présenter aux secours pour ${e.prenom}`} onClose={onClose}>{src && <img src={src} alt={`QR code médical de ${e.prenom}`} className="mx-auto w-full max-w-xs rounded-2xl bg-background p-3" />}<p className="mt-4 text-center text-[13px] text-muted-foreground">Allergies, PAI et contacts accessibles en un scan.</p></Sheet>;
 }
 
@@ -487,9 +496,59 @@ export function SosSheet({ onClose, role = "creche" }: { onClose: () => void; ro
   const parentTel = e?.parents?.[0]?.telephone ?? e?.contactUrgence?.telephone ?? e?.telephoneParent;
   const [motif, setMotif] = useState("");
   const [busy, setBusy] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [result, setResult] = useState<{ qrSrc: string; qrPartage: boolean; consentementRequis: boolean; sos: any } | null>(null);
   const Call = ({ n, l, i: I }: { n: string; l: string; i: typeof Phone }) => <a href={`tel:${n}`} className="flex flex-col items-center gap-1 rounded-3xl bg-foreground py-2.5 text-background"><I className="h-6 w-6" /><b className="text-xl">{n}</b><span className="text-[13px] opacity-70">{l}</span></a>;
+
+  async function declencher() {
+    if (!e) { toast.error("Choisissez l'enfant concerné."); return; }
+    if (!motif.trim()) { toast.error("Indiquez le motif de l'urgence."); return; }
+    setBusy(true);
+    let pos: { latitude?: number; longitude?: number } = {};
+    try { pos = await new Promise((ok) => navigator.geolocation.getCurrentPosition((p) => ok({ latitude: p.coords.latitude, longitude: p.coords.longitude }), () => ok({}), { timeout: 4000 })); } catch { /* sans position */ }
+    try {
+      const r = await send<any>("POST", specs.sosDeclencher.path, {
+        enfantId: idOf(e),
+        motif,
+        ...(pos.latitude !== undefined ? { latitude: pos.latitude } : {}),
+        ...(pos.longitude !== undefined ? { longitude: pos.longitude } : {}),
+        ...(role === "parent" ? { consentementPartage: consent } : {}),
+      });
+      // En démo, le partage ne s'ouvre que si le parent a coché le consentement.
+      const data = r.demo ? demoSos(e.urgenceToken ?? e.codeLiaison, role !== "parent" || consent) : (r.data as any);
+      const qrPartage = !!data?.qrPartage;
+      const consentementRequis = !!data?.consentementRequis;
+      const token = data?.qrToken ?? e.urgenceToken ?? e.codeLiaison;
+      let qrSrc = "";
+      if (qrPartage && token) {
+        try { qrSrc = qrDataUrl(`${window.location.origin}/urgence/${encodeURIComponent(String(token))}`, 420); } catch { qrSrc = ""; }
+      }
+      setResult({ qrSrc, qrPartage, consentementRequis, sos: data?.sos ?? null });
+      if (qrPartage) toast.success(`SOS déclenché — QR ouvert ${SOS_MAX_SCANS} scans / ${SOS_DUREE_HEURES} h`);
+      else toast.warning("SOS enregistré, mais le partage QR n'est pas activé.");
+    } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
+  }
+
   return (
     <Sheet title="Urgence immédiate" sub="Déclenchement en 1 clic" onClose={onClose}>
+      {result && (
+        <div className={`mb-4 rounded-2xl border-2 p-3 ${result.qrPartage ? "border-mobile-blue/50 bg-mobile-blue/10" : "border-warning/50 bg-warning/10"}`}>
+          <p className="font-bold">{result.qrPartage ? "Fenêtre SOS ouverte" : "Partage QR non activé"}</p>
+          {result.qrPartage && result.qrSrc ? (
+            <>
+              <img src={result.qrSrc} alt="QR code d'urgence de l'enfant" className="mx-auto mt-2 w-full max-w-[240px] rounded-xl bg-background p-2" />
+              <p className="mt-2 text-center text-[13px] font-semibold">{result.sos?.scansUtilises ?? 0}/{result.sos?.maxScans ?? SOS_MAX_SCANS} scans utilisés · expire le {sosExpiresLabel(result.sos?.expiresAt)}</p>
+              <p className="mt-1 text-center text-[12px] text-muted-foreground">À présenter aux secours. Le QR reste limité à {SOS_MAX_SCANS} scans pendant {SOS_DUREE_HEURES} h.</p>
+            </>
+          ) : (
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              {result.consentementRequis
+                ? "Le parent doit activer « Partage d'urgence par QR » dans les consentements RGPD, puis relancer le SOS."
+                : "Aucun QR d'urgence n'est disponible pour cet enfant."}
+            </p>
+          )}
+        </div>
+      )}
       <p className="font-bold">Enfant concerné</p>
       <select value={e ? idOf(e) : ""} onChange={(x) => setKid(x.target.value)} className={`${inputCls} mt-2`}>
         <option value="">— Choisir l'enfant —</option>
@@ -506,14 +565,15 @@ export function SosSheet({ onClose, role = "creche" }: { onClose: () => void; ro
       <div className="mt-3 flex flex-wrap gap-2">{MOTIFS.map((m) => <Chip key={m} on={motif === m} onClick={() => setMotif(m)}>{m}</Chip>)}</div>
       <p className="mt-5 font-bold">Appel rapide des secours</p>
       <div className="mt-2 grid grid-cols-3 gap-2"><Call n="15" l="SAMU" i={Asterisk} /><Call n="18" l="Pompiers" i={Flame} /><Call n="112" l="Urgences" i={Phone} /></div>
-      <div className="mt-5"><PrimaryBtn tone="pink" disabled={busy} onClick={async () => {
-        if (!e) { toast.error("Choisissez l'enfant concerné."); return; }
-        if (!motif.trim()) { toast.error("Indiquez le motif de l'urgence."); return; }
-        setBusy(true);
-        let pos: { latitude?: number; longitude?: number } = {};
-        try { pos = await new Promise((ok) => navigator.geolocation.getCurrentPosition((p) => ok({ latitude: p.coords.latitude, longitude: p.coords.longitude }), () => ok({}), { timeout: 4000 })); } catch { /* sans position */ }
-        try { const r = await send("POST", specs.alertes.path, { motif, symptome: motif, enfantId: idOf(e), enfant: idOf(e), urgence: true, niveau: "critique", ...pos }); toast.success(`Alerte envoyée aux parents${r.demo ? " (démo)" : ""}`); onClose(); } catch (x) { toast.error((x as Error).message); } finally { setBusy(false); }
-      }}><Bell className="h-5 w-5" />{busy ? "Envoi…" : "Envoyer l'alerte aux parents"}</PrimaryBtn></div>
+      {role === "parent" ? (
+        <label className="mt-4 flex items-start gap-2 rounded-xl border bg-card p-3 text-[13px]">
+          <input type="checkbox" checked={consent} onChange={(ev) => setConsent(ev.target.checked)} className="mt-0.5 h-4 w-4" />
+          <span>J'autorise le partage de la fiche d'urgence par QR avec les secours pendant {SOS_DUREE_HEURES} h ({SOS_MAX_SCANS} scans maximum).</span>
+        </label>
+      ) : (
+        <p className="mt-3 text-[12px] text-muted-foreground">Le partage QR nécessite le consentement RGPD du parent (« Partage d'urgence par QR »).</p>
+      )}
+      <div className="mt-5"><PrimaryBtn tone="pink" disabled={busy} onClick={() => void declencher()}><Bell className="h-5 w-5" />{busy ? "Envoi…" : "Déclencher le SOS"}</PrimaryBtn></div>
     </Sheet>
   );
 }

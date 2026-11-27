@@ -53,7 +53,7 @@ function NavSidebar({ role, session }: { role: RoleKey; session: Session }) {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
-        {role !== "admin" && <SidebarGroup>
+        {role === "dev" && <SidebarGroup>
           <SidebarGroupLabel className="uppercase tracking-wider">Développement</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

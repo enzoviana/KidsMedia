@@ -47,6 +47,7 @@ import { Route as SectionsRouteImport } from './routes/sections'
 import { Route as SecuriteRgpdRouteImport } from './routes/securite-rgpd'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as TransmissionsRouteImport } from './routes/transmissions'
+import { Route as VaccinsObligatoiresRouteImport } from './routes/vaccins-obligatoires'
 import { Route as AbonnementPaiementRouteImport } from './routes/abonnement_.paiement'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAbonnementsRouteImport } from './routes/admin.abonnements'
@@ -57,6 +58,7 @@ import { Route as AdminLogsRouteImport } from './routes/admin.logs'
 import { Route as AdminSecuriteRouteImport } from './routes/admin.securite'
 import { Route as AdminTarifsRouteImport } from './routes/admin.tarifs'
 import { Route as AdminUtilisateursRouteImport } from './routes/admin.utilisateurs'
+import { Route as AdminVaccinsRouteImport } from './routes/admin.vaccins'
 import { Route as DevIndexRouteImport } from './routes/dev.index'
 import { Route as DevBaseDeDonneesRouteImport } from './routes/dev.base-de-donnees'
 import { Route as DevConfigurationRouteImport } from './routes/dev.configuration'
@@ -265,6 +267,11 @@ const TransmissionsRoute = TransmissionsRouteImport.update({
   path: '/transmissions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VaccinsObligatoiresRoute = VaccinsObligatoiresRouteImport.update({
+  id: '/vaccins-obligatoires',
+  path: '/vaccins-obligatoires',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AbonnementPaiementRoute = AbonnementPaiementRouteImport.update({
   id: '/abonnement_/paiement',
   path: '/abonnement/paiement',
@@ -313,6 +320,11 @@ const AdminTarifsRoute = AdminTarifsRouteImport.update({
 const AdminUtilisateursRoute = AdminUtilisateursRouteImport.update({
   id: '/admin/utilisateurs',
   path: '/admin/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVaccinsRoute = AdminVaccinsRouteImport.update({
+  id: '/admin/vaccins',
+  path: '/admin/vaccins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevIndexRoute = DevIndexRouteImport.update({
@@ -441,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/securite-rgpd': typeof SecuriteRgpdRoute
   '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
+  '/vaccins-obligatoires': typeof VaccinsObligatoiresRoute
   '/abonnement/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -450,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/admin/securite': typeof AdminSecuriteRoute
   '/admin/tarifs': typeof AdminTarifsRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
+  '/admin/vaccins': typeof AdminVaccinsRoute
   '/dev/base-de-donnees': typeof DevBaseDeDonneesRoute
   '/dev/configuration': typeof DevConfigurationRoute
   '/dev/emails': typeof DevEmailsRoute
@@ -508,6 +522,7 @@ export interface FileRoutesByTo {
   '/securite-rgpd': typeof SecuriteRgpdRoute
   '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
+  '/vaccins-obligatoires': typeof VaccinsObligatoiresRoute
   '/abonnement/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -517,6 +532,7 @@ export interface FileRoutesByTo {
   '/admin/securite': typeof AdminSecuriteRoute
   '/admin/tarifs': typeof AdminTarifsRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
+  '/admin/vaccins': typeof AdminVaccinsRoute
   '/dev/base-de-donnees': typeof DevBaseDeDonneesRoute
   '/dev/configuration': typeof DevConfigurationRoute
   '/dev/emails': typeof DevEmailsRoute
@@ -576,6 +592,7 @@ export interface FileRoutesById {
   '/securite-rgpd': typeof SecuriteRgpdRoute
   '/tarifs': typeof TarifsRoute
   '/transmissions': typeof TransmissionsRoute
+  '/vaccins-obligatoires': typeof VaccinsObligatoiresRoute
   '/abonnement_/paiement': typeof AbonnementPaiementRoute
   '/admin/abonnements': typeof AdminAbonnementsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -585,6 +602,7 @@ export interface FileRoutesById {
   '/admin/securite': typeof AdminSecuriteRoute
   '/admin/tarifs': typeof AdminTarifsRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
+  '/admin/vaccins': typeof AdminVaccinsRoute
   '/dev/base-de-donnees': typeof DevBaseDeDonneesRoute
   '/dev/configuration': typeof DevConfigurationRoute
   '/dev/emails': typeof DevEmailsRoute
@@ -645,6 +663,7 @@ export interface FileRouteTypes {
     | '/securite-rgpd'
     | '/tarifs'
     | '/transmissions'
+    | '/vaccins-obligatoires'
     | '/abonnement/paiement'
     | '/admin/abonnements'
     | '/admin/contacts'
@@ -654,6 +673,7 @@ export interface FileRouteTypes {
     | '/admin/securite'
     | '/admin/tarifs'
     | '/admin/utilisateurs'
+    | '/admin/vaccins'
     | '/dev/base-de-donnees'
     | '/dev/configuration'
     | '/dev/emails'
@@ -712,6 +732,7 @@ export interface FileRouteTypes {
     | '/securite-rgpd'
     | '/tarifs'
     | '/transmissions'
+    | '/vaccins-obligatoires'
     | '/abonnement/paiement'
     | '/admin/abonnements'
     | '/admin/contacts'
@@ -721,6 +742,7 @@ export interface FileRouteTypes {
     | '/admin/securite'
     | '/admin/tarifs'
     | '/admin/utilisateurs'
+    | '/admin/vaccins'
     | '/dev/base-de-donnees'
     | '/dev/configuration'
     | '/dev/emails'
@@ -779,6 +801,7 @@ export interface FileRouteTypes {
     | '/securite-rgpd'
     | '/tarifs'
     | '/transmissions'
+    | '/vaccins-obligatoires'
     | '/abonnement_/paiement'
     | '/admin/abonnements'
     | '/admin/contacts'
@@ -788,6 +811,7 @@ export interface FileRouteTypes {
     | '/admin/securite'
     | '/admin/tarifs'
     | '/admin/utilisateurs'
+    | '/admin/vaccins'
     | '/dev/base-de-donnees'
     | '/dev/configuration'
     | '/dev/emails'
@@ -847,6 +871,7 @@ export interface RootRouteChildren {
   SecuriteRgpdRoute: typeof SecuriteRgpdRoute
   TarifsRoute: typeof TarifsRoute
   TransmissionsRoute: typeof TransmissionsRoute
+  VaccinsObligatoiresRoute: typeof VaccinsObligatoiresRoute
   AbonnementPaiementRoute: typeof AbonnementPaiementRoute
   AdminAbonnementsRoute: typeof AdminAbonnementsRoute
   AdminContactsRoute: typeof AdminContactsRoute
@@ -856,6 +881,7 @@ export interface RootRouteChildren {
   AdminSecuriteRoute: typeof AdminSecuriteRoute
   AdminTarifsRoute: typeof AdminTarifsRoute
   AdminUtilisateursRoute: typeof AdminUtilisateursRoute
+  AdminVaccinsRoute: typeof AdminVaccinsRoute
   DevBaseDeDonneesRoute: typeof DevBaseDeDonneesRoute
   DevConfigurationRoute: typeof DevConfigurationRoute
   DevEmailsRoute: typeof DevEmailsRoute
@@ -1144,6 +1170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TransmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vaccins-obligatoires': {
+      id: '/vaccins-obligatoires'
+      path: '/vaccins-obligatoires'
+      fullPath: '/vaccins-obligatoires'
+      preLoaderRoute: typeof VaccinsObligatoiresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/abonnement_/paiement': {
       id: '/abonnement_/paiement'
       path: '/abonnement/paiement'
@@ -1212,6 +1245,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/utilisateurs'
       fullPath: '/admin/utilisateurs'
       preLoaderRoute: typeof AdminUtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/vaccins': {
+      id: '/admin/vaccins'
+      path: '/admin/vaccins'
+      fullPath: '/admin/vaccins'
+      preLoaderRoute: typeof AdminVaccinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/': {
@@ -1375,6 +1415,7 @@ const rootRouteChildren: RootRouteChildren = {
   SecuriteRgpdRoute: SecuriteRgpdRoute,
   TarifsRoute: TarifsRoute,
   TransmissionsRoute: TransmissionsRoute,
+  VaccinsObligatoiresRoute: VaccinsObligatoiresRoute,
   AbonnementPaiementRoute: AbonnementPaiementRoute,
   AdminAbonnementsRoute: AdminAbonnementsRoute,
   AdminContactsRoute: AdminContactsRoute,
@@ -1384,6 +1425,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSecuriteRoute: AdminSecuriteRoute,
   AdminTarifsRoute: AdminTarifsRoute,
   AdminUtilisateursRoute: AdminUtilisateursRoute,
+  AdminVaccinsRoute: AdminVaccinsRoute,
   DevBaseDeDonneesRoute: DevBaseDeDonneesRoute,
   DevConfigurationRoute: DevConfigurationRoute,
   DevEmailsRoute: DevEmailsRoute,

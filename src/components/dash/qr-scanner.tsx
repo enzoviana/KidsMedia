@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ScanLine, X } from "lucide-react";
+import { apiFetch, getSession } from "@/lib/api";
 import { send } from "@/lib/mutate";
 import { parseChildQr } from "@/lib/qr-scan";
 
@@ -49,11 +50,32 @@ export function QrScanner({ onClose, onChild }: { onClose: () => void; onChild: 
     done.current = true;
     try {
       if (p.id) { onChild(p.id); onClose(); return; }
-      const r = await send<any>("POST", "/enfants/lier-code", { code: p.code });
-      const id = r.demo ? `demo-${p.code!.slice(0, 3).toLowerCase()}` : r.data?._id ?? r.data?.id ?? r.data?.enfant?._id ?? r.data?.enfant?.id;
-      toast.success(r.demo ? "Dossier ouvert (mode démo)" : "Dossier de l'enfant ouvert");
-      if (id) onChild(String(id));
-      onClose();
+      if (p.code) {
+        const r = await send<any>("POST", "/enfants/lier-code", { code: p.code });
+        const id = r.demo ? `demo-${p.code.slice(0, 3).toLowerCase()}` : r.data?._id ?? r.data?.id ?? r.data?.enfant?._id ?? r.data?.enfant?.id;
+        toast.success(r.demo ? "Dossier ouvert (mode démo)" : "Dossier de l'enfant ouvert");
+        if (id) onChild(String(id));
+        onClose();
+        return;
+      }
+      if (p.urgence) {
+        // La carte d'urgence du parent encode un jeton public, pas un code de
+        // liaison : on le résout via la fiche d'urgence pour retrouver l'enfant.
+        if (getSession()?.demo) {
+          toast.info("QR d'urgence reconnu", { description: "En mode démo, scannez le code de liaison de l'enfant." });
+          done.current = false;
+          return;
+        }
+        const d = await apiFetch<any>(`/urgence/${encodeURIComponent(p.urgence)}`);
+        const id = d?.enfant?.id ?? d?.enfant?._id ?? d?.id ?? d?._id;
+        if (!id) throw new Error("Ce QR d'urgence ne contient pas de dossier enfant.");
+        toast.success("Dossier de l'enfant ouvert");
+        onChild(String(id));
+        onClose();
+        return;
+      }
+      toast.error("Ce QR code n'est pas un QR KidsMed.");
+      done.current = false;
     } catch (e) { toast.error((e as Error).message); done.current = false; }
   }
 

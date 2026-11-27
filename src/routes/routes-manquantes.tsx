@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,20 @@ export const Route = createFileRoute("/routes-manquantes")({
 const order: RoleKey[] = ["creche", "rsai", "medecin", "directeur", "admin", "dev", "parent"];
 
 function Page() {
+  const navigate = useNavigate();
   const [back, setBack] = useState<RoleKey | null>(null);
   useEffect(() => {
     const s = getSession();
-    setBack(s ? (s.demo ? roleToKey(s.user.role) : roleToKey(s.user.role)) : null);
-  }, []);
+    const role = s ? roleToKey(s.user.role) : null;
+    // Page de diagnostic technique : seul le rôle Développeur peut l'ouvrir.
+    if (role !== "dev") {
+      navigate({ to: role ? roleHome[role] : "/connexion", replace: true });
+      return;
+    }
+    setBack(role);
+  }, [navigate]);
   const all = missingSpecs();
+  if (back !== "dev") return <div data-theme="dev" className="min-h-screen bg-background" />;
   const copyAll = () => {
     navigator.clipboard.writeText(all.map(specToText).join("\n\n"));
     toast.success(`${all.length} routes copiées`);

@@ -54,5 +54,5 @@ const crud: Crud = { entity: "une offre", base: "/tarifs", fields: [
 
 function Page() {
   void Link; void EnfantLink; void Pill; void fullName; void fmtDate;
-  return <ListPage crud={crud} title="Offres & forfaits" spec={specs.tarifsAll} demo={demoTarifs} cols={cols} icon={Tag} />;
+  return <ListPage role="admin" crud={crud} title="Offres & forfaits" spec={specs.tarifsAll} demo={demoTarifs} cols={cols} icon={Tag} />;
 }
