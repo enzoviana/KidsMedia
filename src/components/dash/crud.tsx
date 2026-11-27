@@ -22,6 +22,8 @@ export interface Field {
   /** Affiche un bouton « Ajouter » pour créer l'élément référencé (ex. une crèche). */
   quickCreate?: boolean;
   required?: boolean;
+  /** Champ proposé uniquement en modification (ex. description d'une crèche). */
+  editOnly?: boolean;
 }
 
 export interface Crud {

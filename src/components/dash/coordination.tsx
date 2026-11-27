@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BellRing, MessageSquare, FileText, Star } from "lucide-react";
+import { MessageSquare, FileText, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { getSession, roleToKey, toList } from "@/lib/api";
 import { specs } from "@/lib/specs";
 import { useApiOrDemo } from "@/lib/use-api";
-import { canReadNote, documentEtat, demoDocuments, localId, updateCoordination, useCoordination, validRating, writeSpec } from "@/lib/coordination";
+import { canReadNote, demoDocuments, localId, updateCoordination, useCoordination, validRating, writeSpec } from "@/lib/coordination";
 import { Panel, Pill, fullName, fmtDate, Empty } from "./widgets";
-import { EnfantLink, FormDialog } from "./crud";
+import { FormDialog } from "./crud";
 import { UploadDocButton } from "./upload";
 
 export function RatingButton({ id, name, target = "rsai", average = 0, count = 0, canRate = true, raison }: { id: string; name: string; target?: "rsai" | "etablissement"; average?: number; count?: number; canRate?: boolean; raison?: string }) {
@@ -42,27 +42,6 @@ export function RatingButton({ id, name, target = "rsai", average = 0, count = 0
         <Button type="submit">Publier l'avis</Button>
       </form></DialogContent></Dialog>
   </div>;
-}
-
-export function DocumentAlerts({ enfantId }: { enfantId?: string }) {
-  const store = useCoordination();
-  const isDemo = !!getSession()?.demo;
-  const docs = (isDemo ? [...store.documents, ...demoDocuments] : store.documents)
-    .filter((d) => !enfantId || d.enfant?._id === enfantId)
-    .filter((d, i, all) => all.findIndex((x) => x.type === d.type && x.enfant?._id === d.enfant?._id) === i);
-  const demo = isDemo
-    ? docs.filter((d) => documentEtat(d) !== "valide").map((d) => ({ ...d, motif: documentEtat(d), documentId: d._id }))
-    : [];
-  if (isDemo && !docs.some((d) => d.type === "Certificat médical d'aptitude")) demo.push({ _id: "missing-cert", type: "Certificat médical d'aptitude", enfant: { _id: enfantId ?? "demo-lea", prenom: enfantId === "demo-noah" ? "Noah" : "Léa", nom: enfantId === "demo-noah" ? "Bernard" : "Martin" }, statut: "manquant", nom: "", createdAt: "", dateValidite: "", motif: "manquant", documentId: "" });
-  const r = useApiOrDemo<unknown>(specs.alertesDocuments, demo, enfantId ? { enfantId } : undefined);
-  const alerts = r.demo ? demo : toList(r.data);
-  const labels: Record<string, string> = { manquant: "Manquant", expire: "Expiré", expiration_proche: "Expire bientôt", rejete: "Rejeté" };
-  return <Panel title="Alertes documents" icon={BellRing} spec={specs.alertesDocuments} demo={r.demo} reason={r.reason} className="mb-4">
-    {!alerts.length ? <Empty text="Aucune alerte documentaire" /> : <ul className="divide-y">{alerts.map((a) => <li key={a._id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-      <div className="min-w-0 text-sm"><EnfantLink e={a.enfant} /><p>{a.type}</p><p className="text-xs text-muted-foreground">{a.dateValidite ? `Échéance : ${fmtDate(a.dateValidite)}` : "Pièce requise pour l'inscription"}</p></div>
-      <div className="flex flex-wrap items-center gap-2"><Pill tone={a.motif === "expiration_proche" ? "warning" : "danger"}>{labels[a.motif] ?? a.motif}</Pill><UploadDocButton size="sm" label="Fournir" enfantId={a.enfant?._id} defaultType={a.type} /></div>
-    </li>)}</ul>}
-  </Panel>;
 }
 
 export function MedicalExchanges({ enfantId }: { enfantId: string }) {

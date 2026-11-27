@@ -14,7 +14,7 @@ import { getSession, roleToKey, toList } from "@/lib/api";
 import { specs } from "@/lib/specs";
 import { useApiOrDemo } from "@/lib/use-api";
 import { etabChoices, rsaChoices, localId, useCoordination, updateCoordination, writeSpec, validSchedule } from "@/lib/coordination";
-import { RatingButton, DocumentAlerts } from "@/components/dash/coordination";
+import { RatingButton } from "@/components/dash/coordination";
 
 export const Route = createFileRoute("/coordination")({
   head: () => ({ meta: [
@@ -60,7 +60,6 @@ function Page() {
   ];
   if (!["admin", "dev", "creche", "rsai"].includes(role)) return <DashboardShell title="Coordination"><Empty text="Cet espace est réservé aux crèches, RSAI et administrateurs." /></DashboardShell>;
   return <DashboardShell title={admin ? "Supervision & coordination" : "Coordination RSAI"} actions={<div className="flex flex-wrap gap-2">{admin && <Button onClick={() => { setProcessing(null); setEditing(null); setAssign(true); }}><Plus className="mr-1 h-4 w-4" />Affecter une RSAI</Button>}{role === "creche" && <Button onClick={() => setRequest(true)}>Demander une RSAI</Button>}</div>}>
-    {admin && <DocumentAlerts />}
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel className="lg:col-span-2" title={`Affectations ${annee} (${assignments.length})`} icon={MapPinned} spec={specs.affectationsToutes} demo={ar.demo} reason={ar.reason}>
         <div className="mb-3 flex flex-wrap gap-2">

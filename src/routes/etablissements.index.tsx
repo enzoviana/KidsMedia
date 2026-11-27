@@ -31,8 +31,8 @@ const crud: Crud = { entity: "une crèche", base: "/etablissements", view: "etab
   { name: "telephone", label: "Téléphone", type: "tel" },
   { name: "email", label: "E-mail", type: "email" },
   { name: "groupeId", label: "Groupe territorial", lookup: "groupe" },
-  { name: "description", label: "Description", type: "textarea" },
-  { name: "horairesOuverture", label: "Horaires d'ouverture", type: "text" },
+  { name: "description", label: "Description", type: "textarea", editOnly: true },
+  { name: "horairesOuverture", label: "Horaires d'ouverture", type: "text", editOnly: true },
 ] };
 
 function Page() {

@@ -10,27 +10,36 @@ import { Button } from "@/components/ui/button";
 import { send } from "@/lib/mutate";
 import { getSession, roleToKey } from "@/lib/api";
 import { RatingButton } from "@/components/dash/coordination";
-import { distanceLabel, peutNoterRsai, rsaiLocalisation } from "@/lib/rsai";
+import { distanceLabel, estDisponible, peutNoterRsai, rsaiLocalisation } from "@/lib/rsai";
 import { Link as RouterLink } from "@tanstack/react-router";
 
-function ReferenteCell({ r }: { r: any }) {
+/**
+ * Étoile de référente placée devant le nom : toujours visible si le statut est
+ * actif, sinon révélée au survol pour l'administration (aucun fond coloré).
+ */
+function ReferenteName({ r }: { r: any }) {
   const [referente, setReferente] = useState(!!r.referente);
   const canToggle = ["admin", "dev"].includes(roleToKey(getSession()?.user.role) ?? "");
+  if (!canToggle && !referente) return <span className="font-medium">{fullName(r)}</span>;
   return (
-    <button type="button" disabled={!canToggle} title={canToggle ? (referente ? "Retirer le statut de référente" : "Désigner comme référente de secteur") : "Statut de référente"}
-      aria-label={referente ? "Référente de secteur" : "Non référente"}
-      onClick={async () => {
-        if (!canToggle) return;
-        try {
-          const res = await send("PATCH", specs.userReferente.path, { referente: !referente }, { userId: String(r._id ?? r.id) });
-          setReferente(!referente);
-          toast.success(`${!referente ? "RSAI désignée référente" : "Statut de référente retiré"}${res.demo ? " (démo)" : ""}`);
-        } catch (e) { toast.error((e as Error).message); }
-      }}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${referente ? "bg-warning/20 text-foreground" : "text-muted-foreground"} ${canToggle ? "hover:bg-accent" : "cursor-default"}`}>
-      <Star className={`h-4 w-4 ${referente ? "fill-warning text-warning" : ""}`} />
-      {referente ? "Référente" : canToggle ? "Désigner" : "—"}
-    </button>
+    <span className="group/name inline-flex items-center gap-1.5 font-medium">
+      <button type="button" disabled={!canToggle}
+        title={canToggle ? (referente ? "Retirer le statut de référente" : "Désigner comme référente de secteur") : "Référente de secteur"}
+        aria-label={referente ? "Référente de secteur" : "Désigner comme référente de secteur"}
+        onClick={async (e) => {
+          e.stopPropagation();
+          if (!canToggle) return;
+          try {
+            const res = await send("PATCH", specs.userReferente.path, { referente: !referente }, { userId: String(r._id ?? r.id) });
+            setReferente(!referente);
+            toast.success(`${!referente ? "RSAI désignée référente" : "Statut de référente retiré"}${res.demo ? " (démo)" : ""}`);
+          } catch (err) { toast.error((err as Error).message); }
+        }}
+        className={`shrink-0 rounded p-0.5 transition-opacity ${referente ? "opacity-100" : "opacity-0 group-hover/row:opacity-70 group-hover/name:opacity-70 focus-visible:opacity-100"} ${canToggle ? "cursor-pointer" : "cursor-default"}`}>
+        <Star className={`h-4 w-4 ${referente ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+      </button>
+      {fullName(r)}
+    </span>
   );
 }
 
@@ -51,14 +60,14 @@ export const Route = createFileRoute("/rsai-annuaire")({
 });
 
 const demo: any[] = [
-  { _id: "r1", noteMoyenne: 4.6, nbAvis: 12, prenom: "Nadia", nom: "Roux", region: "Île-de-France", ville: "Paris", secteur: "Paris Est", distanceKm: 1.2, missionsTerminees: 4, peutNoter: true, etablissements: ["Les Petits Soleils", "La Lune Bleue"], email: "n.roux@exemple.fr", tel: "06 00 00 00 03" },
-  { _id: "r2", noteMoyenne: 3.9, nbAvis: 5, prenom: "Thomas", nom: "Blanc", region: "Île-de-France", ville: "Paris", secteur: "Paris Centre", distanceKm: 2.8, missionsTerminees: 0, peutNoter: false, etablissements: ["L'Étoile"], email: "t.blanc@exemple.fr", tel: "06 00 00 00 04" },
+  { _id: "r1", noteMoyenne: 4.6, nbAvis: 12, prenom: "Nadia", nom: "Roux", region: "Île-de-France", departement: "75", secteur: "Paris Est", distanceKm: 1.2, missionsTerminees: 4, peutNoter: true, referente: true, missionEnCours: false, etablissements: ["Les Petits Soleils", "La Lune Bleue"], email: "n.roux@exemple.fr", tel: "06 00 00 00 03" },
+  { _id: "r2", noteMoyenne: 3.9, nbAvis: 5, prenom: "Thomas", nom: "Blanc", region: "Île-de-France", departement: "75", secteur: "Paris Centre", distanceKm: 2.8, missionsTerminees: 0, peutNoter: false, referente: false, missionEnCours: true, etablissements: ["L'Étoile"], email: "t.blanc@exemple.fr", tel: "06 00 00 00 04" },
 ];
 
 const cols: Col[] = [
-  { label: "RSAI", render: (r) => <span className="flex items-center gap-1.5 font-medium"><Star className={`h-4 w-4 ${r.referente ? "fill-warning text-warning" : "hidden"}`} aria-label={r.referente ? "Référente de secteur" : undefined} />{fullName(r)}</span> },
-  { label: "Référente", render: (r) => <ReferenteCell r={r} /> },
+  { label: "RSAI", render: (r) => <ReferenteName r={r} /> },
   { label: "Localisation", render: (r) => <span className="flex flex-wrap items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{localisation(r)}{!r.region && <Pill tone="warning">région non renseignée</Pill>}</span> },
+  { label: "Disponibilité", render: (r) => { const dispo = estDisponible(r); return dispo == null ? <span className="text-muted-foreground">—</span> : <Pill tone={dispo ? "success" : "warning"}>{dispo ? "Disponible" : "En mission"}</Pill>; } },
   { label: "Distance", render: (r) => <Pill tone={r.distanceKm != null && Number(r.distanceKm) <= 10 ? "success" : "default"}>{distanceLabel(r.distanceKm)}</Pill> },
   { label: "Crèches suivies", render: (r) => (r.etablissements ?? []).map((e: any) => e.nom ?? e).join(", ") || "—" },
   { label: "Missions terminées", render: (r) => r.missionsTerminees ?? 0 },
@@ -76,7 +85,7 @@ const crud: Crud = {
     { name: "email", label: "E-mail", type: "email", required: true },
     { name: "telephone", label: "Téléphone", type: "tel" },
     { name: "qualification", label: "Qualification", type: "text" },
-    { name: "adresse", label: "Adresse professionnelle", type: "address" },
+    { name: "departement", label: "Département", type: "text" },
     { name: "secteur", label: "Secteur d'intervention", type: "text" },
     { name: "region", label: "Région", type: "text" },
     { name: "presentation", label: "Présentation", type: "textarea" },

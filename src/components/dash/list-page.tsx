@@ -31,7 +31,7 @@ export function DataTable({ rows, cols, onOpenRow }: { rows: any[]; cols: Col[];
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r._id ?? r.id ?? i} className={`border-b last:border-0 hover:bg-accent/40 ${onOpenRow ? "cursor-pointer" : ""}`} onClick={onOpenRow ? (event) => {
+            <tr key={r._id ?? r.id ?? i} className={`group/row border-b last:border-0 hover:bg-accent/40 ${onOpenRow ? "cursor-pointer" : ""}`} onClick={onOpenRow ? (event) => {
               const target = event.target;
               if (target instanceof Element && target.closest("a, button, input, select, textarea, [role='button']")) return;
               onOpenRow(r);
@@ -67,6 +67,8 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
   const [viewing, setViewing] = useState<any>(null);
   const [deleting, setDeleting] = useState<any>(null);
   const base = [...additionalRows, ...(local ?? toList(r.data))].filter((row, index, all) => !row._id || all.findIndex((x) => x._id === row._id) === index);
+  // Certains champs (description, horaires…) ne doivent pas alourdir la création.
+  const createFields = crud ? crud.fields.filter((f) => !f.editOnly) : [];
   const rows = base.filter((x) => !q || JSON.stringify(x).toLowerCase().includes(q.toLowerCase())).sort(sortRows);
 
   const done = (msg: string, demoMode: boolean) => {
@@ -178,7 +180,7 @@ export function ListPage({ title, role, spec, demo, cols, icon, actions, vars, b
       </Panel>
       {crud && (
         <>
-          <FormDialog open={adding} onOpenChange={setAdding} title={`Ajouter ${crud.entity}`} fields={crud.fields} submitLabel="Ajouter" onSubmit={create} />
+          <FormDialog open={adding} onOpenChange={setAdding} title={`Ajouter ${crud.entity}`} fields={createFields} submitLabel="Ajouter" onSubmit={create} />
           {!crud.noEdit && <FormDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} title={`Modifier ${crud.entity}`} fields={crud.fields} initial={editing} onSubmit={update} />}
           {renderView
             ? renderView(viewing, () => setViewing(null))

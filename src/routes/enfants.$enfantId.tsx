@@ -14,7 +14,7 @@ import { UploadDocButton } from "@/components/dash/upload";
 import { useApiOrDemo } from "@/lib/use-api";
 import { Panel } from "@/components/dash/widgets";
 import { VaccinPanel, ConsentPanel, AccesHistorique, AccessGuard, SignalerButton, SosHistorique } from "@/components/dash/medical";
-import { DocumentAlerts, MedicalExchanges } from "@/components/dash/coordination";
+import { MedicalExchanges } from "@/components/dash/coordination";
 import { useCoordination } from "@/lib/coordination";
 
 export const Route = createFileRoute("/enfants/$enfantId")({
@@ -86,7 +86,6 @@ function EnfantPage() {
     <DashboardShell title="Dossier enfant" actions={<div className="flex flex-wrap gap-2 print:hidden"><Button variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" />Exporter le dossier en PDF</Button><SignalerButton enfantId={enfantId} /><UploadDocButton enfantId={enfantId} label="Ajouter un document" types={documentsLibres} onUploaded={(d) => setExtraDocs((x) => [d, ...x])} /><Button variant="outline" asChild><Link to="/enfants"><ArrowLeft className="mr-1 h-4 w-4" />Retour</Link></Button></div>}>
       <AccessGuard enfantId={enfantId}>
       <EnfantPhoto enfantId={enfantId} photoUrl={enf.photoUrl} nom={[enf.prenom, enf.nom].filter(Boolean).join(" ")} />
-      <DocumentAlerts enfantId={enfantId} />
       <div className="grid gap-4 lg:grid-cols-3">
         <DataPanel title="Identité" icon={Baby} spec={specs.enfant} demoData={demoE} vars={v} className="lg:col-span-1">
           {(e: any) => (
