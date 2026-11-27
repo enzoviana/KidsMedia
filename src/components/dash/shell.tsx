@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
-import { Bell, ListChecks, LogOut, Search, ChevronsUpDown } from "lucide-react";
+import { ListChecks, LogOut, Search, ChevronsUpDown } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { getSession, logout, roleToKey, SECURITY_EVENT, type RoleKey, type Session, type SecurityBlock } from "@/lib/api";
 import { SecurityBlockedScreen } from "./security-blocked";
 import { missingSpecs } from "@/lib/specs";
-import { useApiOrDemo } from "@/lib/use-api";
-import { specs } from "@/lib/specs";
 import { TicketButton, UserAvatar, useSessionUser } from "./beta";
 import { InstallQrButton } from "@/components/pwa/install";
 
@@ -91,17 +89,6 @@ function NavSidebar({ role, session }: { role: RoleKey; session: Session }) {
   );
 }
 
-function NotifBell() {
-  const r = useApiOrDemo<{ count?: number } | number>(specs.notifUnread, { count: 3 });
-  const n = typeof r.data === "number" ? r.data : r.data?.count ?? 0;
-  return (
-    <Button variant="ghost" size="icon" className="relative" aria-label="Notifications" asChild><Link to="/notifications">
-      <Bell className="h-4 w-4" />
-      {n > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{n}</span>}
-    </Link></Button>
-  );
-}
-
 export function DashboardShell({ role: forced, title, actions, children }: { role?: RoleKey | undefined; title: string; groups?: NavGroup[]; actions?: ReactNode; children: ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -148,7 +135,6 @@ export function DashboardShell({ role: forced, title, actions, children }: { rol
               <div className="ml-auto flex items-center gap-2">
                 <InstallQrButton className="hidden lg:inline-flex" />
                 <TicketButton />
-                <NotifBell />
                 <div className="hidden items-center gap-3 border-l pl-3 lg:flex">
                   <UserAvatar user={liveUser ?? session.user} />
                   <div className="text-sm leading-tight">
