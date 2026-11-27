@@ -33,8 +33,8 @@ const JOURS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 const demo = {
   _id: "r1", prenom: "Nadia", nom: "Roux", email: "n.roux@exemple.fr", telephone: "06 00 00 00 03",
   qualification: "Infirmière puéricultrice", avatarUrl: null, departement: "75",
-  region: "Île-de-France", secteur: "Paris Est", presentation: "Accompagnement des équipes de crèche et des familles sur l'inclusion et les PAI.",
-  experienceAnnees: 5, langues: ["Français"], disponibilites: "Mardi au samedi, 9 h – 17 h", referente: true,
+  presentation: "Accompagnement des équipes de crèche et des familles sur l'inclusion et les PAI.",
+  experienceAnnees: 5, langues: ["Français"], referente: true,
   noteMoyenne: 4.6, nbAvis: 3, missionsTerminees: 4, missionsTermineesAvecCreche: 1, peutNoter: true, dejaNote: 4,
   affectations: [
     { creche: { nom: "Les Petits Soleils", ville: "Paris", region: "Île-de-France", adresse: "10 rue de Rivoli" }, dateDebut: "2025-01-06", dateFin: "2025-06-30", statut: "terminee", terminee: true, jours: [1, 3], debut: "08:30", fin: "12:30" },
@@ -57,12 +57,9 @@ const editFields: Field[] = [
   { name: "telephone", label: "Téléphone", type: "tel" },
   { name: "qualification", label: "Qualification", type: "text" },
   { name: "departement", label: "Département", type: "text" },
-  { name: "region", label: "Région", type: "text" },
-  { name: "secteur", label: "Secteur d'intervention", type: "text" },
   { name: "presentation", label: "Présentation", type: "textarea" },
   { name: "experienceAnnees", label: "Années d'expérience", type: "number" },
   { name: "langues", label: "Langues (séparées par des virgules)", type: "text" },
-  { name: "disponibilites", label: "Créneaux habituels", type: "text" },
   { name: "referente", label: "Référente de secteur", type: "checkbox" },
 ];
 
@@ -108,9 +105,8 @@ function Page() {
                 </p>
                 <p className="text-sm text-muted-foreground">{data.qualification ?? "Référente Santé et Accueil Inclusif"}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[departementLabel(data) !== "—" ? `Département ${departementLabel(data)}` : "", data.region, data.secteur].filter(Boolean).join(" · ") || "Localisation non renseignée"}</span>
+                  <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{departementLabel(data) !== "—" ? `Département ${departementLabel(data)}` : "Département non renseigné"}</span>
                   {dispo != null && <Pill tone={dispo ? "success" : "warning"}>{dispo ? "Disponible" : "En mission"}</Pill>}
-                  {data.distanceKm != null && <Pill tone={Number(data.distanceKm) <= 10 ? "success" : "default"}>à {Number(data.distanceKm) < 1 ? `${Math.round(Number(data.distanceKm) * 1000)} m` : `${Number(data.distanceKm).toFixed(1)} km`}</Pill>}
                 </p>
               </div>
             </div>
@@ -119,10 +115,8 @@ function Page() {
             <Row k="E-mail" v={data.email ?? "—"} />
             <Row k="Téléphone" v={data.telephone ?? data.tel ?? "—"} />
             <Row k="Département" v={departementLabel(data)} />
-            <Row k="Région / secteur" v={[data.region, data.secteur].filter(Boolean).join(" · ") || "—"} />
             <Row k="Expérience" v={data.experienceAnnees != null ? `${data.experienceAnnees} an${Number(data.experienceAnnees) > 1 ? "s" : ""}` : "—"} />
             <Row k="Langues" v={(Array.isArray(data.langues) ? data.langues.join(", ") : data.langues) || "—"} />
-            <Row k="Créneaux habituels" v={data.disponibilites ?? "—"} />
             <Row k="Disponibilité" v={dispo == null ? "—" : <Pill tone={dispo ? "success" : "warning"}>{dispo ? "Disponible" : "En mission"}</Pill>} />
           </div>
           <div className="space-y-3">

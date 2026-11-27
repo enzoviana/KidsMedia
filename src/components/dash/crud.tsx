@@ -223,9 +223,10 @@ function DetailValue({ field, value }: { field: string; value: any }) {
   return <>{ETATS[text] ?? text}</>;
 }
 
-export function ViewDialog({ row, onOpenChange, title }: { row: any; onOpenChange: (o: boolean) => void; title: string }) {
+export function ViewDialog({ row, onOpenChange, title, hiddenKeys = [] }: { row: any; onOpenChange: (o: boolean) => void; title: string; hiddenKeys?: string[] }) {
+  const hidden = new Set([...HIDDEN_DETAIL_KEYS, ...hiddenKeys]);
   const entries = row
-    ? Object.entries(row).filter(([k, v]) => !HIDDEN_DETAIL_KEYS.has(k) && v !== undefined && v !== null && v !== "")
+    ? Object.entries(row).filter(([k, v]) => !hidden.has(k) && v !== undefined && v !== null && v !== "")
     : [];
   const documentUrl = typeof row?.url === "string" && row.url ? row.url : typeof row?.lien === "string" && row.lien ? row.lien : "";
   const enfantId = enfantIdOf(row?.enfant);

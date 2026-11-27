@@ -1,13 +1,5 @@
 /** Affichage et règles de la fiche RSAI. */
 
-export function distanceLabel(km: unknown): string {
-  if (km == null || km === "") return "—";
-  const n = Number(km);
-  if (!Number.isFinite(n) || n < 0) return "—";
-  if (n < 1) return `${Math.round(n * 1000)} m`;
-  return `${n.toFixed(1)} km`;
-}
-
 /** Code du département, sans adresse exacte (code postal ou champ dédié). */
 export function departementLabel(r: { departement?: string; codePostal?: string } | null | undefined): string {
   if (!r) return "—";
@@ -19,11 +11,10 @@ export function departementLabel(r: { departement?: string; codePostal?: string 
   return cp.slice(0, 2);
 }
 
-/** Localisation publique d'une RSAI : département, région et secteur (jamais l'adresse exacte). */
-export function rsaiLocalisation(r: { region?: string; departement?: string; codePostal?: string; secteur?: string } | null | undefined): string {
-  if (!r) return "Région non renseignée";
+/** Localisation publique d'une RSAI : uniquement le département (jamais l'adresse exacte). */
+export function rsaiLocalisation(r: { departement?: string; codePostal?: string } | null | undefined): string {
   const dep = departementLabel(r);
-  return [dep !== "—" ? `Département ${dep}` : "", r.region, r.secteur].filter(Boolean).join(" · ") || "Région non renseignée";
+  return dep !== "—" ? `Département ${dep}` : "Département non renseigné";
 }
 
 /** Vrai si au moins une affectation active couvre la date du jour. */

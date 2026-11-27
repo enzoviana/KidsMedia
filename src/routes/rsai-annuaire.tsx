@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { send } from "@/lib/mutate";
 import { getSession, roleToKey } from "@/lib/api";
 import { RatingButton } from "@/components/dash/coordination";
-import { distanceLabel, estDisponible, peutNoterRsai, rsaiLocalisation } from "@/lib/rsai";
+import { departementLabel, estDisponible, peutNoterRsai, rsaiLocalisation } from "@/lib/rsai";
 import { Link as RouterLink } from "@tanstack/react-router";
 
 /**
@@ -60,16 +60,14 @@ export const Route = createFileRoute("/rsai-annuaire")({
 });
 
 const demo: any[] = [
-  { _id: "r1", noteMoyenne: 4.6, nbAvis: 12, prenom: "Nadia", nom: "Roux", region: "Île-de-France", departement: "75", secteur: "Paris Est", distanceKm: 1.2, missionsTerminees: 4, peutNoter: true, referente: true, missionEnCours: false, etablissements: ["Les Petits Soleils", "La Lune Bleue"], email: "n.roux@exemple.fr", tel: "06 00 00 00 03" },
-  { _id: "r2", noteMoyenne: 3.9, nbAvis: 5, prenom: "Thomas", nom: "Blanc", region: "Île-de-France", departement: "75", secteur: "Paris Centre", distanceKm: 2.8, missionsTerminees: 0, peutNoter: false, referente: false, missionEnCours: true, etablissements: ["L'Étoile"], email: "t.blanc@exemple.fr", tel: "06 00 00 00 04" },
+  { _id: "r1", noteMoyenne: 4.6, nbAvis: 12, prenom: "Nadia", nom: "Roux", departement: "75", missionsTerminees: 4, peutNoter: true, referente: true, missionEnCours: false, email: "n.roux@exemple.fr", tel: "06 00 00 00 03" },
+  { _id: "r2", noteMoyenne: 3.9, nbAvis: 5, prenom: "Thomas", nom: "Blanc", departement: "75", missionsTerminees: 0, peutNoter: false, referente: false, missionEnCours: true, email: "t.blanc@exemple.fr", tel: "06 00 00 00 04" },
 ];
 
 const cols: Col[] = [
   { label: "RSAI", render: (r) => <ReferenteName r={r} /> },
-  { label: "Localisation", render: (r) => <span className="flex flex-wrap items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{localisation(r)}{!r.region && <Pill tone="warning">région non renseignée</Pill>}</span> },
+  { label: "Département", render: (r) => <span className="flex flex-wrap items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{localisation(r)}{departementLabel(r) === "—" && <Pill tone="warning">département non renseigné</Pill>}</span> },
   { label: "Disponibilité", render: (r) => { const dispo = estDisponible(r); return dispo == null ? <span className="text-muted-foreground">—</span> : <Pill tone={dispo ? "success" : "warning"}>{dispo ? "Disponible" : "En mission"}</Pill>; } },
-  { label: "Distance", render: (r) => <Pill tone={r.distanceKm != null && Number(r.distanceKm) <= 10 ? "success" : "default"}>{distanceLabel(r.distanceKm)}</Pill> },
-  { label: "Crèches suivies", render: (r) => (r.etablissements ?? []).map((e: any) => e.nom ?? e).join(", ") || "—" },
   { label: "Missions terminées", render: (r) => r.missionsTerminees ?? 0 },
   { label: "Note", render: (r) => <RatingButton id={r._id} name={fullName(r)} average={r.noteMoyenne} count={r.nbAvis} canRate={peutNoterRsai(r)} /> },
   { label: "Contact", render: (r) => <span className="text-muted-foreground">{r.email ?? "—"} · {r.tel ?? ""}</span> },
@@ -86,11 +84,8 @@ const crud: Crud = {
     { name: "telephone", label: "Téléphone", type: "tel" },
     { name: "qualification", label: "Qualification", type: "text" },
     { name: "departement", label: "Département", type: "text" },
-    { name: "secteur", label: "Secteur d'intervention", type: "text" },
-    { name: "region", label: "Région", type: "text" },
     { name: "presentation", label: "Présentation", type: "textarea" },
     { name: "experienceAnnees", label: "Années d'expérience", type: "number" },
-    { name: "disponibilites", label: "Disponibilités", type: "text" },
   ],
 };
 

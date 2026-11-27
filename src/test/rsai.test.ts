@@ -1,23 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { departementLabel, distanceLabel, estDisponible, peutNoterRsai, rsaiLocalisation } from "../lib/rsai";
+import { departementLabel, estDisponible, peutNoterRsai, rsaiLocalisation } from "../lib/rsai";
 
 describe("Fiche et annuaire RSAI", () => {
-  it("affiche une distance lisible", () => {
-    expect(distanceLabel(null)).toBe("—");
-    expect(distanceLabel(0.35)).toBe("350 m");
-    expect(distanceLabel(2.84)).toBe("2.8 km");
-    expect(distanceLabel("12.0")).toBe("12.0 km");
-    expect(distanceLabel("inconnue")).toBe("—");
-  });
-
   it("affiche uniquement le département, jamais l'adresse exacte", () => {
     expect(departementLabel({ departement: "75" })).toBe("75");
     expect(departementLabel({ codePostal: "75011" })).toBe("75");
     expect(departementLabel({ codePostal: "97400" })).toBe("974");
     expect(departementLabel(null)).toBe("—");
-    expect(rsaiLocalisation({ region: "Île-de-France", departement: "75", secteur: "Paris Est" })).toBe("Département 75 · Île-de-France · Paris Est");
-    expect(rsaiLocalisation({ region: "Bretagne" })).toBe("Bretagne");
-    expect(rsaiLocalisation(null)).toBe("Région non renseignée");
+    expect(rsaiLocalisation({ departement: "75" })).toBe("Département 75");
+    expect(rsaiLocalisation({ codePostal: "69002" })).toBe("Département 69");
+    expect(rsaiLocalisation(null)).toBe("Département non renseigné");
   });
 
   it("calcule la pastille de disponibilité selon la mission en cours", () => {

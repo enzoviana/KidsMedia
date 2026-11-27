@@ -4,7 +4,7 @@ import { UserCog, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListPage, type Col } from "@/components/dash/list-page";
-import { type Crud } from "@/components/dash/crud";
+import { ViewDialog, type Crud } from "@/components/dash/crud";
 import { Pill, fullName } from "@/components/dash/widgets";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -115,11 +115,12 @@ function Page() {
     // disponible en modification. L'adresse exacte est remplacée par le département.
     { name: "qualification", label: "Qualification (RSAI / médecin)", type: "text", editOnly: true },
     { name: "departement", label: "Département (RSAI)", type: "text", editOnly: true },
-    { name: "secteur", label: "Secteur d'intervention (RSAI)", type: "text", editOnly: true },
-    { name: "region", label: "Région (RSAI)", type: "text", editOnly: true },
     { name: "presentation", label: "Présentation (RSAI)", type: "textarea", editOnly: true },
     { name: "experienceAnnees", label: "Années d'expérience (RSAI)", type: "number", editOnly: true },
-    { name: "disponibilites", label: "Disponibilités (RSAI)", type: "text", editOnly: true },
   ] } as Crud;
-  return <ListPage role="admin" crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog} />;
+  // Le détail d'une RSAI ne doit plus exposer l'adresse exacte, la région, le
+  // secteur ni les créneaux habituels.
+  const rsaiHidden = ["adresse", "codePostal", "ville", "latitude", "longitude", "region", "secteur", "disponibilites"];
+  return <ListPage role="admin" crud={crud} title={dev ? "Utilisateurs — accès complet" : "Utilisateurs"} spec={specs.users} demo={demo} cols={cols} icon={UserCog}
+    renderView={(row, close) => <ViewDialog row={row} onOpenChange={(o) => { if (!o) close(); }} title="Détail — un utilisateur" hiddenKeys={row?.role === "rsai" ? rsaiHidden : []} />} />;
 }
